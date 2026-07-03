@@ -229,6 +229,22 @@ h2 {
   background: var(--teal);
 }
 
+.status-pill.error {
+  color: #fffaf0;
+  background: var(--primary-dark);
+}
+
+.vision-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .preview-frame,
 .result-frame {
   position: relative;

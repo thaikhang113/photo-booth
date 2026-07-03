@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CameraBooth from './components/CameraBooth.jsx';
 import FilterPanel from './components/FilterPanel.jsx';
 import Header from './components/Header.jsx';
@@ -13,6 +13,10 @@ export default function App() {
   const [resultUrl, setResultUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [faceLandmarks, setFaceLandmarks] = useState([]);
+  const [handGesture, setHandGesture] = useState('None');
+  const [visionReady, setVisionReady] = useState(false);
+  const [visionError, setVisionError] = useState('');
 
   useEffect(() => {
     fetchFilters()
@@ -57,6 +61,13 @@ export default function App() {
     setError('');
   }
 
+  const handleVisionUpdate = useCallback((state) => {
+    setFaceLandmarks(state.faceLandmarks);
+    setHandGesture(state.handGesture);
+    setVisionReady(state.visionReady);
+    setVisionError(state.visionError);
+  }, []);
+
   return (
     <main className="app-shell">
       <Header />
@@ -69,10 +80,15 @@ export default function App() {
       <div className="booth-layout">
         <CameraBooth
           capturedUrl={capturedUrl}
+          faceLandmarks={faceLandmarks}
+          handGesture={handGesture}
           loading={loading}
+          visionReady={visionReady}
+          visionError={visionError}
           onCapture={handleCapture}
           onApply={handleApply}
           onReset={reset}
+          onVisionUpdate={handleVisionUpdate}
         />
         <FilterPanel filters={filters} selected={selectedFilter} onSelect={setSelectedFilter} />
       </div>
