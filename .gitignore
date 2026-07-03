@@ -6,6 +6,6 @@ backend/results/*
 !backend/results/.gitkeep
 node_modules/
 dist/
+.worktrees/
 .env
 .DS_Store
-
