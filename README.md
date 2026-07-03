@@ -118,3 +118,7 @@ pip install mediapipe
 ```
 
 Neu cai loi, bo qua. Filter `landmark` van co fallback OpenCV.
+
+## DOCX Completion Notes
+
+The app now includes browser-side MediaPipe face landmarks and gesture recognition, gesture control, metadata-backed filter options, lightweight live preview, and a regression checklist at `docs/docx-requirements-checklist.md`. Processed photos remain in memory and are not persisted on the server.
