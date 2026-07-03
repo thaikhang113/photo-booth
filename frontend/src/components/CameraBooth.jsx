@@ -103,6 +103,21 @@ export default function CameraBooth({
     return () => cancelAnimationFrame(visionRef.current.frameId);
   }, [cameraOn, visionReady, capturedUrl]);
 
+
+  useEffect(() => {
+    if (!handGesture || !visionReady) return undefined;
+    const timer = setTimeout(() => {
+      if (["Pointing_Up", "Thumb_Up"].includes(handGesture)) {
+        window.dispatchEvent(new CustomEvent("gesture-next"));
+      } else if (["Open_Palm", "Victory"].includes(handGesture)) {
+        onApply?.();
+      } else if (handGesture === "Closed_Fist") {
+        onReset?.();
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [handGesture, visionReady, onApply, onReset]);
+
   async function startCamera() {
     setError('');
     try {
