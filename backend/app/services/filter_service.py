@@ -24,10 +24,9 @@ PROCESSORS = {
     "tuong": apply_tuong,
 }
 
-
-def process_image(data: bytes, filter_type: str):
+def process_image(data: bytes, filter_type: str, metadata: dict | None = None):
     if filter_type not in PROCESSORS:
         raise ValueError("filter_type khong hop le.")
     image = bytes_to_bgr(data)
-    result = PROCESSORS[filter_type](image)
-    return png_bytes(result)
+    result = PROCESSORS[filter_type](image, metadata=metadata)
+    return png_bytes(result)
