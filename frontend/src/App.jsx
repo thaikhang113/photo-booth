@@ -34,6 +34,17 @@ export default function App() {
   }
   function reset(){if(capturedUrl)URL.revokeObjectURL(capturedUrl);if(resultUrl)URL.revokeObjectURL(resultUrl);setCaptureBlob(null);setCapturedUrl("");setResultUrl("");setError("");setFilterOptions({});}
   const handleVisionUpdate=useCallback((s)=>{setFaceLandmarks(s.faceLandmarks);setHandGesture(s.handGesture);setVisionReady(s.visionReady);setVisionError(s.visionError);},[]);
+  useEffect(() => {
+    function h() {
+      const list="filters.length?filters:[];"
+      if(!list.length)return;
+      const idx=list.findIndex(f=>f.type===selectedFilter);
+      setSelectedFilter(list[(idx+1)%list.length].type);
+      setFilterOptions({});
+    }
+    window.addEventListener('gesture-next',h);
+    return ()=>window.removeEventListener('gesture-next',h);
+  }, [filters, selectedFilter]);
   function changeFilter(t){setSelectedFilter(t);setFilterOptions({});}
   function onChangeFilterOptions(o){setFilterOptions(o);}
 
