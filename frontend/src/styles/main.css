@@ -448,3 +448,10 @@ h2 {
     font-size: 30px;
   }
 }
+
+.filter-options{margin-top:14px;padding:12px;border-radius:8px;background:rgba(255,250,241,0.6)}
+.filter-options label{display:block;margin-bottom:8px;font-size:12px;font-weight:900;color:var(--teal);text-transform:uppercase}
+.option-row{display:flex;flex-wrap:wrap;gap:6px}
+.opt-btn{min-height:34px;padding:0 12px;font-size:13px;font-weight:800;border:1px solid var(--border);border-radius:6px;color:var(--ink);background:var(--surface-strong);cursor:pointer}
+.opt-btn.active{color:#fffdf6;background:var(--primary);border-color:transparent}
+.opt-btn:hover{box-shadow:0 4px 12px rgba(141,23,32,0.15)}
