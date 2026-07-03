@@ -19,6 +19,7 @@ export default function CameraBooth({
   onApply,
   onReset,
   onVisionUpdate,
+  onLivePreviewFrame,
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -26,6 +27,7 @@ export default function CameraBooth({
   const visionRef = useRef({ faceLandmarker: null, gestureRecognizer: null, frameId: 0 });
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState('');
+  const [livePreview, setLivePreview] = useState(false);
   const [faceLandmarks, setFaceLandmarks] = useState([]);
   const [handGesture, setHandGesture] = useState('None');
   const [visionReady, setVisionReady] = useState(false);
@@ -118,6 +120,24 @@ export default function CameraBooth({
     return () => clearTimeout(timer);
   }, [handGesture, visionReady, onApply, onReset]);
 
+
+  useEffect(() => {
+    if (!livePreview || !cameraOn || capturedUrl || loading || !onLivePreviewFrame) return undefined;
+    let cancelled = false;
+    const timer = setInterval(() => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas || video.readyState < 2 || cancelled) return;
+      canvas.width = video.videoWidth || 960;
+      canvas.height = video.videoHeight || 720;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!cancelled && blob) onLivePreviewFrame(blob);
+      }, 'image/png');
+    }, 650);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [livePreview, cameraOn, capturedUrl, loading, onLivePreviewFrame]);
+
   async function startCamera() {
     setError('');
     try {
@@ -183,6 +203,9 @@ export default function CameraBooth({
         </button>
         <button type="button" disabled={!capturedUrl || loading} onClick={onApply}>
           <Send size={18} /> {loading ? 'Đang xử lý...' : 'Apply Filter'}
+        </button>
+        <button type="button" className={livePreview ? 'ghost active' : 'ghost'} onClick={() => setLivePreview(!livePreview)}>
+          Live Preview
         </button>
         <button type="button" className="ghost" onClick={resetAll}>
           <RefreshCcw size={18} /> Reset

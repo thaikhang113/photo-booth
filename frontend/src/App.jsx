@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import CameraBooth from "./components/CameraBooth.jsx";
 import FilterPanel from "./components/FilterPanel.jsx";
 import Header from "./components/Header.jsx";
@@ -18,6 +18,7 @@ export default function App() {
   const [visionReady,setVisionReady]=useState(false);
   const [visionError,setVisionError]=useState("");
   const [filterOptions,setFilterOptions]=useState({});
+  const livePreviewSeq = useRef(0);
 
   useEffect(()=>{fetchFilters().then(d=>setFilters(d.filters||[])).catch(()=>setError("Backend chưa sẵn sàng. Vẫn có thể chụp ảnh, nhưng Apply Filter cần FastAPI."));},[]);
 
@@ -48,6 +49,19 @@ export default function App() {
   function changeFilter(t){setSelectedFilter(t);setFilterOptions({});}
   function onChangeFilterOptions(o){setFilterOptions(o);}
 
+
+  const handleLivePreviewFrame = useCallback(async (blob) => {
+    const seq = ++livePreviewSeq.current;
+    try {
+      const meta = { faceLandmarks, handGesture, filterOptions };
+      const result = await processImage(blob, selectedFilter, meta);
+      if (seq !== livePreviewSeq.current) return;
+      setResultUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(result); });
+    } catch {
+      // Live preview is opportunistic; manual Apply remains authoritative.
+    }
+  }, [faceLandmarks, handGesture, filterOptions, selectedFilter]);
+
   return (<main className="app-shell">
     <Header/>
     {error&&<p className="message error global">{error}</p>}
@@ -59,7 +73,7 @@ export default function App() {
     <div className="booth-layout">
       <CameraBooth capturedUrl={capturedUrl} faceLandmarks={faceLandmarks} handGesture={handGesture}
         loading={loading} visionReady={visionReady} visionError={visionError}
-        onCapture={handleCapture} onApply={handleApply} onReset={reset} onVisionUpdate={handleVisionUpdate}/>
+        onCapture={handleCapture} onApply={handleApply} onReset={reset} onVisionUpdate={handleVisionUpdate} onLivePreviewFrame={handleLivePreviewFrame}/>
       <FilterPanel filters={filters} selected={selectedFilter} filterOptions={filterOptions}
         onSelect={changeFilter} onFilterOptions={onChangeFilterOptions}/>
     </div>
