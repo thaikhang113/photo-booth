@@ -8,7 +8,18 @@ const FACE_MODEL_URL =
 const GESTURE_MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task';
 
-export default function CameraBooth({ capturedUrl, loading, onCapture, onApply, onReset }) {
+export default function CameraBooth({
+  capturedUrl,
+  faceLandmarks: parentFaceLandmarks,
+  handGesture: parentHandGesture,
+  loading,
+  visionReady: parentVisionReady,
+  visionError: parentVisionError,
+  onCapture,
+  onApply,
+  onReset,
+  onVisionUpdate,
+}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -19,6 +30,10 @@ export default function CameraBooth({ capturedUrl, loading, onCapture, onApply, 
   const [handGesture, setHandGesture] = useState('None');
   const [visionReady, setVisionReady] = useState(false);
   const [visionError, setVisionError] = useState('');
+  const displayFaceLandmarks = parentFaceLandmarks ?? faceLandmarks;
+  const displayHandGesture = parentHandGesture ?? handGesture;
+  const displayVisionReady = parentVisionReady ?? visionReady;
+  const displayVisionError = parentVisionError ?? visionError;
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +74,10 @@ export default function CameraBooth({ capturedUrl, loading, onCapture, onApply, 
       visionRef.current.gestureRecognizer?.close();
     };
   }, []);
+
+  useEffect(() => {
+    onVisionUpdate?.({ faceLandmarks, handGesture, visionReady, visionError });
+  }, [faceLandmarks, handGesture, visionReady, visionError, onVisionUpdate]);
 
   useEffect(() => {
     if (!cameraOn || !visionReady || capturedUrl) return undefined;
@@ -133,13 +152,13 @@ export default function CameraBooth({ capturedUrl, loading, onCapture, onApply, 
       </div>
       {error && <p className="message error">{error}</p>}
       <div className="vision-status" aria-live="polite">
-        <span className={visionError ? 'status-pill error' : visionReady ? 'status-pill live' : 'status-pill'}>
-          {visionError ? 'Vision error' : visionReady ? 'Vision ready' : 'Vision loading'}
+        <span className={displayVisionError ? 'status-pill error' : displayVisionReady ? 'status-pill live' : 'status-pill'}>
+          {displayVisionError ? 'Vision error' : displayVisionReady ? 'Vision ready' : 'Vision loading'}
         </span>
-        <span>Gesture: {handGesture}</span>
-        <span>Landmarks: {faceLandmarks.flat().length}</span>
+        <span>Gesture: {displayHandGesture}</span>
+        <span>Landmarks: {displayFaceLandmarks.flat().length}</span>
       </div>
-      {visionError && <p className="message error">{visionError}</p>}
+      {displayVisionError && <p className="message error">{displayVisionError}</p>}
       <div className="toolbar">
         <button type="button" onClick={startCamera}>
           <Video size={18} /> Start Camera
