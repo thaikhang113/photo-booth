@@ -21,7 +21,6 @@ photo-booth-vietnam/
 │   │   ├── services/
 │   │   ├── utils/
 │   │   └── assets/
-│   ├── results/
 │   ├── requirements.txt
 │   └── README.md
 ├── frontend/
@@ -63,8 +62,8 @@ Mo `http://localhost:5173`. Backend mac dinh: `http://localhost:8000`.
 
 - `GET /api/health`: health check.
 - `GET /api/filters`: danh sach bo loc.
-- `POST /api/process-image`: nhan `multipart/form-data` gom `image` va `filter_type`, tra ve anh PNG, dong thoi luu vao `backend/results`.
-- `POST /api/save-result`: placeholder, vi MVP da luu tu dong khi xu ly.
+- `POST /api/process-image`: nhan `multipart/form-data` gom `image` va `filter_type`, tra ve anh PNG trong response, khong luu file tren server.
+- `POST /api/save-result`: placeholder, khong luu anh tren server.
 
 `filter_type` hop le:
 
@@ -92,7 +91,7 @@ Neu thieu assets, code tu ve placeholder bang OpenCV de app van chay. Neu khong 
 - Start Camera, Capture, Apply Filter, Download Result, Reset.
 - Capture frame bang canvas.
 - Gui anh + `filter_type` sang FastAPI bang multipart/form-data.
-- Backend xu ly va tra blob/image, luu ket qua vao `backend/results`.
+- Backend xu ly va tra blob/image, khong luu ket qua tren server.
 - Error state cho backend chua chay, webcam bi tu choi quyen, chua chup anh.
 - 6 bo loc MVP:
   - Tranh Dong Ho: bilateral filter, k-means quantization, Canny edge blend.

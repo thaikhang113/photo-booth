@@ -17,7 +17,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - `POST /api/process-image`
 - `POST /api/save-result`
 
-Anh ket qua duoc luu vao `backend/results`.
+Anh ket qua duoc tra ve trong response, khong luu file tren server.
 
 ## Assets
 
@@ -25,4 +25,3 @@ Anh ket qua duoc luu vao `backend/results`.
 - `app/assets/costumes`: `non_la.png`, `khan_dong.png`
 - `app/assets/tet`: PNG trang tri Tet
 - `app/assets/tuong`: PNG/texture Tuong
-

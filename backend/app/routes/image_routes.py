@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 
 from app.services.filter_service import FILTERS, process_image
 
@@ -26,16 +26,15 @@ async def process_uploaded_image(
 
     data = await image.read()
     try:
-        result_path = process_image(data, filter_type)
+        result = process_image(data, filter_type)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Xu ly anh that bai: {exc}") from exc
 
-    return FileResponse(result_path, media_type="image/png", filename=result_path.name)
+    return Response(result, media_type="image/png")
 
 
 @router.post("/save-result")
 def save_result_placeholder():
-    return {"message": "Anh da duoc luu tu dong khi goi /api/process-image."}
-
+    return {"message": "Anh chi duoc xu ly tam thoi, khong luu tren server."}

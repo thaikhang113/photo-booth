@@ -4,8 +4,7 @@ from app.services.landmark_filter import apply_landmark
 from app.services.tet_filter import apply_tet
 from app.services.time_travel_filter import apply_time_travel
 from app.services.tuong_filter import apply_tuong
-from app.utils.file_utils import timestamped_result_path
-from app.utils.image_utils import bytes_to_bgr, save_png
+from app.utils.image_utils import bytes_to_bgr, png_bytes
 
 FILTERS = {
     "dong_ho": "Tranh Đông Hồ",
@@ -31,6 +30,4 @@ def process_image(data: bytes, filter_type: str):
         raise ValueError("filter_type khong hop le.")
     image = bytes_to_bgr(data)
     result = PROCESSORS[filter_type](image)
-    output_path = timestamped_result_path(filter_type)
-    save_png(result, output_path)
-    return output_path
+    return png_bytes(result)

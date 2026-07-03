@@ -1,7 +1,11 @@
 import numpy as np
+import cv2
+from pathlib import Path
 
-from app.services.filter_service import PROCESSORS
+from app.services.filter_service import PROCESSORS, process_image
 from app.services.landmark_filter import _opencv_person_mask
+
+RESULTS_DIR = Path(__file__).resolve().parents[1] / "results"
 
 
 def main():
@@ -17,6 +21,14 @@ def main():
     assert mask is not None, "opencv fallback mask missing"
     assert mask[110, 90] > 0.7, "subject center not preserved"
     assert mask[10, 10] < 0.25, "background corner not removed"
+
+    ok, png = cv2.imencode(".png", sample)
+    assert ok, "sample encode failed"
+    before = set(RESULTS_DIR.glob("*.png")) if RESULTS_DIR.exists() else set()
+    payload = process_image(png.tobytes(), "dong_ho")
+    after = set(RESULTS_DIR.glob("*.png")) if RESULTS_DIR.exists() else set()
+    assert isinstance(payload, bytes), "process_image should return in-memory PNG bytes"
+    assert after == before, "process_image should not persist result files"
     print("backend self-check ok")
 
 

@@ -11,10 +11,11 @@ def bytes_to_bgr(data: bytes) -> np.ndarray:
     return image
 
 
-def save_png(image: np.ndarray, path):
-    ok = cv2.imwrite(str(path), image)
+def png_bytes(image: np.ndarray) -> bytes:
+    ok, encoded = cv2.imencode(".png", image)
     if not ok:
-        raise ValueError("Khong luu duoc anh ket qua.")
+        raise ValueError("Khong tao duoc anh ket qua.")
+    return encoded.tobytes()
 
 
 def overlay_png(base: np.ndarray, overlay: np.ndarray, x: int, y: int, width: int) -> np.ndarray:
@@ -58,4 +59,3 @@ def _has_arial() -> bool:
         return True
     except OSError:
         return False
-
