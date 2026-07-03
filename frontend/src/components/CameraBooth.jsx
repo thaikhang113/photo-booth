@@ -1,12 +1,88 @@
 import { Camera, RefreshCcw, Send, Video } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { FaceLandmarker, FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
+
+const VISION_WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
+const FACE_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const GESTURE_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task';
 
 export default function CameraBooth({ capturedUrl, loading, onCapture, onApply, onReset }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const visionRef = useRef({ faceLandmarker: null, gestureRecognizer: null, frameId: 0 });
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState('');
+  const [faceLandmarks, setFaceLandmarks] = useState([]);
+  const [handGesture, setHandGesture] = useState('None');
+  const [visionReady, setVisionReady] = useState(false);
+  const [visionError, setVisionError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadVision() {
+      setVisionError('');
+      try {
+        const vision = await FilesetResolver.forVisionTasks(VISION_WASM_URL);
+        const [faceLandmarker, gestureRecognizer] = await Promise.all([
+          FaceLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: FACE_MODEL_URL },
+            runningMode: 'VIDEO',
+          }),
+          GestureRecognizer.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: GESTURE_MODEL_URL },
+            runningMode: 'VIDEO',
+          }),
+        ]);
+        if (cancelled) {
+          faceLandmarker.close();
+          gestureRecognizer.close();
+          return;
+        }
+        visionRef.current.faceLandmarker = faceLandmarker;
+        visionRef.current.gestureRecognizer = gestureRecognizer;
+        setVisionReady(true);
+      } catch (err) {
+        setVisionError(err?.message || 'MediaPipe vision failed to load.');
+      }
+    }
+
+    loadVision();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(visionRef.current.frameId);
+      visionRef.current.faceLandmarker?.close();
+      visionRef.current.gestureRecognizer?.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOn || !visionReady || capturedUrl) return undefined;
+
+    function detectFrame() {
+      const video = videoRef.current;
+      const { faceLandmarker, gestureRecognizer } = visionRef.current;
+      if (video?.readyState >= 2 && faceLandmarker && gestureRecognizer) {
+        try {
+          const now = performance.now();
+          const faceResult = faceLandmarker.detectForVideo(video, now);
+          const gestureResult = gestureRecognizer.recognizeForVideo(video, now);
+          setFaceLandmarks(faceResult.faceLandmarks || []);
+          setHandGesture(gestureResult.gestures?.[0]?.[0]?.categoryName || 'None');
+        } catch (err) {
+          setVisionError(err?.message || 'MediaPipe vision failed during detection.');
+        }
+      }
+      visionRef.current.frameId = requestAnimationFrame(detectFrame);
+    }
+
+    visionRef.current.frameId = requestAnimationFrame(detectFrame);
+    return () => cancelAnimationFrame(visionRef.current.frameId);
+  }, [cameraOn, visionReady, capturedUrl]);
 
   async function startCamera() {
     setError('');
@@ -56,6 +132,14 @@ export default function CameraBooth({ capturedUrl, loading, onCapture, onApply, 
         {!cameraOn && !capturedUrl && <div className="empty-state">Webcam preview</div>}
       </div>
       {error && <p className="message error">{error}</p>}
+      <div className="vision-status" aria-live="polite">
+        <span className={visionError ? 'status-pill error' : visionReady ? 'status-pill live' : 'status-pill'}>
+          {visionError ? 'Vision error' : visionReady ? 'Vision ready' : 'Vision loading'}
+        </span>
+        <span>Gesture: {handGesture}</span>
+        <span>Landmarks: {faceLandmarks.flat().length}</span>
+      </div>
+      {visionError && <p className="message error">{visionError}</p>}
       <div className="toolbar">
         <button type="button" onClick={startCamera}>
           <Video size={18} /> Start Camera
