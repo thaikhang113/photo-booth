@@ -22,8 +22,8 @@ export default function App() {
 
   useEffect(()=>{fetchFilters().then(d=>setFilters(d.filters||[])).catch(()=>setError("Backend chưa sẵn sàng. Vẫn có thể chụp ảnh, nhưng Apply Filter cần FastAPI."));},[]);
 
-  function handleCapture(blob,url){if(capturedUrl)URL.revokeObjectURL(capturedUrl);setCaptureBlob(blob);setCapturedUrl(url);setResultUrl("");setError("");}
-  async function handleApply(){
+  const handleCapture=useCallback((blob,url)=>{setCapturedUrl(prev=>{if(prev)URL.revokeObjectURL(prev);return url;});setCaptureBlob(blob);setResultUrl("");setError("");},[]);
+  const handleApply=useCallback(async ()=>{
     if(!captureBlob){setError("Hãy chụp ảnh trước khi áp dụng bộ lọc.");return;}
     setLoading(true);setError("");
     try{
@@ -32,12 +32,12 @@ export default function App() {
       if(resultUrl)URL.revokeObjectURL(resultUrl);
       setResultUrl(URL.createObjectURL(blob));
     }catch(err){setError(err.message);}finally{setLoading(false);}
-  }
-  function reset(){if(capturedUrl)URL.revokeObjectURL(capturedUrl);if(resultUrl)URL.revokeObjectURL(resultUrl);setCaptureBlob(null);setCapturedUrl("");setResultUrl("");setError("");setFilterOptions({});}
+  },[captureBlob, faceLandmarks, filterOptions, handGesture, resultUrl, selectedFilter]);
+  const reset=useCallback(()=>{setCapturedUrl(prev=>{if(prev)URL.revokeObjectURL(prev);return "";});setResultUrl(prev=>{if(prev)URL.revokeObjectURL(prev);return "";});setCaptureBlob(null);setError("");setFilterOptions({});},[]);
   const handleVisionUpdate=useCallback((s)=>{setFaceLandmarks(s.faceLandmarks);setHandGesture(s.handGesture);setVisionReady(s.visionReady);setVisionError(s.visionError);},[]);
   useEffect(() => {
     function h() {
-      const list="filters.length?filters:[];"
+      const list=filters.length?filters:[];
       if(!list.length)return;
       const idx=list.findIndex(f=>f.type===selectedFilter);
       setSelectedFilter(list[(idx+1)%list.length].type);

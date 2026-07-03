@@ -24,6 +24,8 @@ export default function CameraBooth({
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const gestureActionsRef = useRef({ onApply, onReset });
+  const visionPublishRef = useRef({ key: '', time: 0 });
   const visionRef = useRef({ faceLandmarker: null, gestureRecognizer: null, frameId: 0 });
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState('');
@@ -78,8 +80,17 @@ export default function CameraBooth({
   }, []);
 
   useEffect(() => {
+    const flatCount = faceLandmarks.flat().length;
+    const key = `${visionReady}|${visionError}|${handGesture}|${flatCount}`;
+    const now = performance.now();
+    if (visionPublishRef.current.key === key && now - visionPublishRef.current.time < 300) return;
+    visionPublishRef.current = { key, time: now };
     onVisionUpdate?.({ faceLandmarks, handGesture, visionReady, visionError });
   }, [faceLandmarks, handGesture, visionReady, visionError, onVisionUpdate]);
+
+  useEffect(() => {
+    gestureActionsRef.current = { onApply, onReset };
+  }, [onApply, onReset]);
 
   useEffect(() => {
     if (!cameraOn || !visionReady || capturedUrl) return undefined;
@@ -112,13 +123,13 @@ export default function CameraBooth({
       if (["Pointing_Up", "Thumb_Up"].includes(handGesture)) {
         window.dispatchEvent(new CustomEvent("gesture-next"));
       } else if (["Open_Palm", "Victory"].includes(handGesture)) {
-        onApply?.();
+        gestureActionsRef.current.onApply?.();
       } else if (handGesture === "Closed_Fist") {
-        onReset?.();
+        gestureActionsRef.current.onReset?.();
       }
     }, 800);
     return () => clearTimeout(timer);
-  }, [handGesture, visionReady, onApply, onReset]);
+  }, [handGesture, visionReady]);
 
 
   useEffect(() => {
@@ -181,7 +192,7 @@ export default function CameraBooth({
         {capturedUrl ? (
           <img src={capturedUrl} alt="Ảnh vừa chụp" />
         ) : (
-          <video ref={videoRef} autoPlay playsInline muted />
+          <video ref={videoRef} aria-label="Webcam preview" autoPlay playsInline muted />
         )}
         {!cameraOn && !capturedUrl && <div className="empty-state">Webcam preview</div>}
       </div>
