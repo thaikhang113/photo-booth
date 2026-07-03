@@ -73,6 +73,7 @@ export default function CameraBooth({
 
     return () => {
       cancelled = true;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       cancelAnimationFrame(visionRef.current.frameId);
       visionRef.current.faceLandmarker?.close();
       visionRef.current.gestureRecognizer?.close();
@@ -152,12 +153,14 @@ export default function CameraBooth({
   async function startCamera() {
     setError('');
     try {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 960, height: 720 }, audio: false });
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
       setCameraOn(true);
-    } catch {
-      setError('Không mở được webcam. Kiểm tra quyền camera trên browser.');
+    } catch (err) {
+      setCameraOn(false);
+      setError(`Không mở được webcam (${err?.name || 'Error'}). Đóng app/tab khác đang dùng camera rồi bấm Start Camera lại.`);
     }
   }
 
