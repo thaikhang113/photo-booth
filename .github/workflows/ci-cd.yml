@@ -114,15 +114,12 @@ jobs:
     needs: [frontend, deploy-backend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     environment: production
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --prefix frontend
 
       - name: Deploy frontend
         env:
