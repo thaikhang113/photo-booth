@@ -80,7 +80,7 @@ jobs:
           if-no-files-found: error
 
   deploy-backend:
-    name: Build and deploy backend container
+    name: Build and publish backend container
     runs-on: ubuntu-latest
     needs: backend
     if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
@@ -107,13 +107,6 @@ jobs:
           tags: |
             ${{ env.BACKEND_IMAGE }}
             ${{ env.ACR_LOGIN_SERVER }}/photo-booth-backend:latest
-
-      - name: Deploy backend image
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ vars.AZURE_WEBAPP_NAME || 'photo-booth-vn-f387ea3a' }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: ${{ env.BACKEND_IMAGE }}
 
   deploy-frontend:
     name: Deploy frontend to Vercel
