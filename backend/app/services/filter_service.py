@@ -15,6 +15,13 @@ FILTERS = {
     "tuong": "Nghệ Thuật Tuồng",
 }
 
+FILTER_METADATA = {
+    "time_travel": {"modes": ["1980", "modern", "future"]},
+    "landmark": {"opts": ["hoi_an", "hue", "ho_guom", "ha_long"]},
+    "costume": {"opts": ["non_la", "khan_dong", "khan_ran"]},
+    "tet": {"tetLocations": ["home", "street", "flower_market"]},
+}
+
 PROCESSORS = {
     "dong_ho": apply_dong_ho,
     "time_travel": apply_time_travel,

@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 import json
 
-from app.services.filter_service import FILTERS, process_image
+from app.services.filter_service import FILTERS, FILTER_METADATA, process_image
 
 router = APIRouter()
 
@@ -12,7 +12,12 @@ def health():
 
 @router.get("/filters")
 def filters():
-    return {"filters": [{"type": key, "name": value} for key, value in FILTERS.items()]}
+    return {
+        "filters": [
+            {"type": key, "name": value, **FILTER_METADATA.get(key, {})}
+            for key, value in FILTERS.items()
+        ]
+    }
 
 @router.post("/process-image")
 async def process_uploaded_image(

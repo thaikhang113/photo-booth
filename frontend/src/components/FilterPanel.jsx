@@ -5,7 +5,7 @@ const FALLBACK = [
   { type: "time_travel", name: "Du Hành Thời Gian", modes: ["1980","modern","future"] },
   { type: "landmark", name: "Địa Danh Việt Nam", opts: ["hoi_an","hue","ho_guom","ha_long"] },
   { type: "costume", name: "Trang Phục Truyền Thống", opts: ["non_la","khan_dong","khan_ran"] },
-  { type: "tet", name: "Tết Việt Nam" },
+  { type: "tet", name: "Tết Việt Nam", tetLocations: ["home","street","flower_market"] },
   { type: "tuong", name: "Nghệ Thuật Tuồng" },
 ];
 const DESC = {
@@ -18,10 +18,11 @@ const LBL = {
   timeTravelMode:{"1980":"1980",modern:"Hiện đại",future:"Tương lai"},
   landmark:{hoi_an:"Hội An",hue:"Huế",ho_guom:"Hồ Gươm",ha_long:"Hạ Long"},
   costume:{non_la:"Nón lá",khan_dong:"Khăn đóng",khan_ran:"Khăn rằn"},
+  tetLocation:{home:"Nhà",street:"Phố Tết",flower_market:"Chợ hoa"},
 };
 
 export default function FilterPanel({filters,selected,filterOptions,onSelect,onFilterOptions}) {
-  const list=filters.length?filters:FALLBACK;
+  const list=(filters.length?filters:FALLBACK).map(f=>({...FALLBACK.find(x=>x.type===f.type),...f}));
   const opts=filterOptions||{};
   const cur=list.find(f=>f.type===selected);
   return (<aside className="filter-panel"><div className="panel-heading compact"><div><p className="panel-kicker">Filter set</p><h2>Bộ lọc văn hóa</h2></div></div>
@@ -39,6 +40,9 @@ export default function FilterPanel({filters,selected,filterOptions,onSelect,onF
     ))}</div></div>}
     {selected==="costume"&&<div className="filter-options"><label>Phụ kiện:</label><div className="option-row">{FALLBACK.find(f=>f.type==="costume").opts.map(o=>(
       <button key={o} className={opts.costume===o?"opt-btn active":"opt-btn"} onClick={()=>onFilterOptions?.({...opts,costume:o})}>{LBL.costume[o]||o}</button>
+    ))}</div></div>}
+    {selected==="tet"&&<div className="filter-options"><label>Đón Tết:</label><div className="option-row">{(cur?.tetLocations||[]).map(o=>(
+      <button key={o} className={(opts.tetLocation||cur.tetLocations[0])===o?"opt-btn active":"opt-btn"} onClick={()=>onFilterOptions?.({...opts,tetLocation:o})}>{LBL.tetLocation[o]||o}</button>
     ))}</div></div>}
   </aside>);
 }

@@ -5,6 +5,20 @@ import Header from "./components/Header.jsx";
 import ResultPreview from "./components/ResultPreview.jsx";
 import { fetchFilters, processImage } from "./services/api.js";
 
+const FILTER_DEFAULTS = [
+  { type: "dong_ho", name: "Tranh Đông Hồ" },
+  { type: "time_travel", name: "Du Hành Thời Gian", modes: ["1980", "modern", "future"] },
+  { type: "landmark", name: "Địa Danh Việt Nam", opts: ["hoi_an", "hue", "ho_guom", "ha_long"] },
+  { type: "costume", name: "Trang Phục Truyền Thống", opts: ["non_la", "khan_dong", "khan_ran"] },
+  { type: "tet", name: "Tết Việt Nam", tetLocations: ["home", "street", "flower_market"] },
+  { type: "tuong", name: "Nghệ Thuật Tuồng" },
+];
+
+function withFallbackMeta(filters) {
+  const source = filters?.length ? filters : FILTER_DEFAULTS;
+  return source.map((f) => ({ ...(FILTER_DEFAULTS.find((x) => x.type === f.type) || {}), ...f }));
+}
+
 export default function App() {
   const [filters,setFilters]=useState([]);
   const [selectedFilter,setSelectedFilter]=useState("dong_ho");
@@ -20,7 +34,7 @@ export default function App() {
   const [filterOptions,setFilterOptions]=useState({});
   const livePreviewSeq = useRef(0);
 
-  useEffect(()=>{fetchFilters().then(d=>setFilters(d.filters||[])).catch(()=>setError("Backend chưa sẵn sàng. Vẫn có thể chụp ảnh, nhưng Apply Filter cần FastAPI."));},[]);
+  useEffect(()=>{fetchFilters().then(d=>setFilters(withFallbackMeta(d.filters))).catch(()=>{setFilters(FILTER_DEFAULTS);setError("Backend chưa sẵn sàng. Vẫn có thể chụp ảnh, nhưng Apply Filter cần FastAPI.");});},[]);
 
   const handleCapture=useCallback((blob,url)=>{setCapturedUrl(prev=>{if(prev)URL.revokeObjectURL(prev);return url;});setCaptureBlob(blob);setResultUrl("");setError("");},[]);
   const handleApply=useCallback(async ()=>{
@@ -37,15 +51,23 @@ export default function App() {
   const handleVisionUpdate=useCallback((s)=>{setFaceLandmarks(s.faceLandmarks);setHandGesture(s.handGesture);setVisionReady(s.visionReady);setVisionError(s.visionError);},[]);
   useEffect(() => {
     function h() {
-      const list=filters.length?filters:[];
+      const list=withFallbackMeta(filters);
       if(!list.length)return;
+      if(selectedFilter==="tet"){
+        const tet=list.find(f=>f.type==="tet");
+        const locations=tet?.tetLocations||[];
+        const current=filterOptions.tetLocation||locations[0];
+        const idx=locations.indexOf(current);
+        setFilterOptions({...filterOptions,tetLocation:locations[(idx+1)%locations.length]});
+        return;
+      }
       const idx=list.findIndex(f=>f.type===selectedFilter);
       setSelectedFilter(list[(idx+1)%list.length].type);
       setFilterOptions({});
     }
     window.addEventListener('gesture-next',h);
     return ()=>window.removeEventListener('gesture-next',h);
-  }, [filters, selectedFilter]);
+  }, [filterOptions, filters, selectedFilter]);
   function changeFilter(t){setSelectedFilter(t);setFilterOptions({});}
   function onChangeFilterOptions(o){setFilterOptions(o);}
 
