@@ -121,6 +121,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install frontend dependencies
+        run: npm ci
+
       - name: Deploy frontend
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
