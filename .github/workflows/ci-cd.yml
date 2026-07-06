@@ -52,6 +52,8 @@ jobs:
   frontend:
     name: Frontend build
     runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE: https://photo-booth-vn-f387ea3a.azurewebsites.net
     defaults:
       run:
         working-directory: frontend
@@ -114,6 +116,8 @@ jobs:
     needs: [frontend, deploy-backend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     environment: production
+    env:
+      VITE_API_BASE: https://photo-booth-vn-f387ea3a.azurewebsites.net
     steps:
       - name: Checkout
         uses: actions/checkout@v4

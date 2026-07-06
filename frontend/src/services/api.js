@@ -1,4 +1,7 @@
-﻿const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const LOCAL_API_BASE = "http://localhost:8000";
+const PRODUCTION_API_BASE = "https://photo-booth-vn-f387ea3a.azurewebsites.net";
+const isLocalHost = ["localhost", "127.0.0.1"].includes(globalThis.location?.hostname);
+const API_BASE = import.meta.env.VITE_API_BASE || (isLocalHost ? LOCAL_API_BASE : PRODUCTION_API_BASE);
 
 export async function fetchFilters() {
   const res = await fetch(`${API_BASE}/api/filters`);
