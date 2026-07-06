@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from app.services.filter_service import PROCESSORS, process_image
-from app.services.landmark_filter import _opencv_person_mask
+from app.services.subject_utils import subject_mask
 
 RESULTS_DIR = Path(__file__).resolve().parents[1] / "results"
 
@@ -43,8 +43,7 @@ def main():
     subject = np.zeros((220, 180, 3), dtype=np.uint8)
     subject[:] = (40, 180, 40)
     subject[35:185, 60:120] = (220, 220, 230)
-    mask = _opencv_person_mask(subject)
-    assert mask is not None, "opencv fallback mask missing"
+    mask = subject_mask(subject)
     assert mask[110, 90] > 0.7, "subject center not preserved"
     assert mask[10, 10] < 0.25, "background corner not removed"
     print("backend self-check ok")

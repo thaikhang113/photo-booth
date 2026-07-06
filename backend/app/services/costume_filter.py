@@ -2,7 +2,8 @@
 import numpy as np
 from pathlib import Path
 
-from app.utils.image_utils import detect_faces, overlay_png
+from app.services.subject_utils import face_rects
+from app.utils.image_utils import overlay_png
 
 ASSET_DIR = Path(__file__).resolve().parents[1] / "assets" / "costumes"
 
@@ -11,29 +12,24 @@ def apply_costume(image: np.ndarray, metadata: dict | None = None) -> np.ndarray
     if metadata:
         costume_type = (metadata.get("filterOptions") or {}).get("costume")
     result = image.copy()
-    faces = detect_faces(image)
+    faces = face_rects(image, metadata)
 
     if costume_type == "khan_ran":
-        if len(faces) == 0:
-            cx, cy = image.shape[1] // 2, int(image.shape[0] * 0.2)
-            _draw_khan_ran(result, cx - 60, cy - 30, 120, 60)
-        else:
-            for (x, y, w, h) in faces:
-                _draw_khan_ran(result, x - w // 2, y - h // 6, w * 2, h // 2)
+        for (x, y, w, h) in faces:
+            _draw_khan_ran(result, x - w // 2, y - h // 8, w * 2, max(16, h // 2))
         return result
 
     overlay = _read_overlay(costume_type)
     if len(faces) == 0:
-        _draw_non_la(result, result.shape[1] // 2, int(result.shape[0] * 0.18), int(result.shape[1] * 0.32))
         return result
 
     for (x, y, w, h) in faces:
         if overlay is not None:
-            result = overlay_png(result, overlay, x - w // 3, y - int(h * 0.75), int(w * 1.7))
+            result = overlay_png(result, overlay, x - int(w * 0.40), y - int(h * 1.02), int(w * 1.80))
         elif costume_type == "khan_dong":
             _draw_khan_dong(result, x + w // 2, y + h // 8, w)
         else:
-            _draw_non_la(result, x + w // 2, y - int(h * 0.22), int(w * 0.95))
+            _draw_non_la(result, x + w // 2, y - int(h * 0.28), int(w * 0.78))
     return result
 
 def _read_overlay(costume_type: str | None = None):

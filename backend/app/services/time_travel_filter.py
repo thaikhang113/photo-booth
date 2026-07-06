@@ -14,14 +14,18 @@ def apply_time_travel(image: np.ndarray, metadata: dict | None = None) -> np.nda
         return result
 
     if mode == "future":
-        result = cv2.convertScaleAbs(image, alpha=1.25, beta=4)
-        hsv = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
-        hsv[:,:,0] = np.clip(hsv[:,:,0].astype(np.int16) - 40, 0, 180).astype(np.uint8)
-        hsv[:,:,1] = np.clip(hsv[:,:,1].astype(np.int16) * 1.3, 0, 255).astype(np.uint8)
-        result = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        base = cv2.convertScaleAbs(image, alpha=1.08, beta=6)
+        cool = np.zeros_like(base)
+        cool[:, :, 0] = 42
+        cool[:, :, 1] = 12
+        cool[:, :, 2] = 18
+        result = cv2.addWeighted(base, 0.88, cool, 0.42, 0)
         h, w = result.shape[:2]
-        cv2.rectangle(result, (2, 2), (w-3, h-3), (200, 200, 0), 2)
-        cv2.rectangle(result, (5, 5), (w-6, h-6), (200, 100, 0), 1)
+        glow = result.copy()
+        for i in range(0, w, max(42, w // 8)):
+            cv2.line(glow, (i, h), (min(w - 1, i + w // 5), 0), (255, 120, 220), 1)
+        cv2.rectangle(glow, (4, 4), (w - 5, h - 5), (255, 210, 80), 2)
+        result = cv2.addWeighted(result, 0.86, glow, 0.14, 0)
         return result
 
     # 1980 default

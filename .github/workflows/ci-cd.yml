@@ -42,6 +42,9 @@ jobs:
       - name: Run backend regression check
         run: python -m app.checks.regression_check
 
+      - name: Run backend quality check
+        run: python -m app.checks.quality_check
+
       - name: Upload backend source
         uses: actions/upload-artifact@v4
         with:
