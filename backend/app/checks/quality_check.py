@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from app.services.costume_filter import apply_costume
+from app.services.dong_ho_filter import apply_dong_ho
 from app.services.landmark_filter import apply_landmark
 from app.services.tet_filter import apply_tet
 from app.services.time_travel_filter import apply_time_travel
@@ -35,6 +36,16 @@ def _changed_ratio(a, b):
 def main():
     image = _portrait()
     metadata = {"faceLandmarks": FACE_LANDMARKS, "filterOptions": {}}
+
+    dong_ho = apply_dong_ho(image, metadata)
+    palette_size = len(np.unique(dong_ho.reshape(-1, 3), axis=0))
+    border = np.concatenate([dong_ho[:8].reshape(-1, 3), dong_ho[-8:].reshape(-1, 3), dong_ho[:, :8].reshape(-1, 3), dong_ho[:, -8:].reshape(-1, 3)])
+    dark_ratio = float(np.mean(np.all(dong_ho < 55, axis=2)))
+    paper_ratio = float(np.mean((dong_ho[:, :, 0] > 190) & (dong_ho[:, :, 1] > 195) & (dong_ho[:, :, 2] > 205)))
+    assert palette_size < 80, "dong ho should use a restrained folk palette"
+    assert float(border.mean()) < float(dong_ho.mean()) - 20, "dong ho should add a dark folk-art border"
+    assert dark_ratio > 0.05, "dong ho should have visible black woodcut lines"
+    assert paper_ratio > 0.08, "dong ho should preserve ivory diep-paper tones"
 
     future = apply_time_travel(image, {"filterOptions": {"timeTravelMode": "future"}})
     assert future[:, :, 0].mean() > image[:, :, 0].mean(), "future should add clean blue/cyan light"

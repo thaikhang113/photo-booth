@@ -207,6 +207,18 @@ export default function App() {
   function selectShot(index){
     const shot=boothShots[index];
     if(!shot)return;
+    if(shot.status==="empty"){
+      clearPendingShot();
+      setSelectedShotIndex(index);
+      setCurrentSlotIndex(index);
+      setCapturedUrl("");
+      setCaptureBlob(null);
+      setResultUrl("");
+      setBoothActive(boothMode>1);
+      setReviewMode(false);
+      setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
+      return;
+    }
     setSelectedShotIndex(index);
     setCurrentSlotIndex(index);
     setBoothActive(false);
@@ -410,7 +422,7 @@ export default function App() {
       </div>
       <div className="shot-grid">
         {boothShots.map((shot,i)=><button type="button" key={shot.id} className={`${selectedShotIndex===i?"shot-thumb active":"shot-thumb"} ${shot.status==="empty"?"empty":""}`} onClick={()=>selectShot(i)}>
-          {shot.url?<img src={shot.resultUrl||shot.url} alt={`Booth shot ${i+1}`} />:<div className="slot-placeholder">Slot {i+1}</div>}
+          {shot.url?<img src={shot.resultUrl||shot.url} alt={`Booth shot ${i+1}`} />:<div className="slot-placeholder">{selectedShotIndex===i?`Slot ${i+1} - next`:`Slot ${i+1}`}</div>}
           <span>{i+1}</span>
         </button>)}
       </div>

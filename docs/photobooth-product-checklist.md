@@ -7,6 +7,7 @@
 - [x] Mirror preview and captured output.
 - [x] Single / 4 shots / 6 shots modes.
 - [x] Manual 4/6 slot flow: capture -> preview -> OK or Retake -> Apply Filter -> Next Photo.
+- [x] Clicking an empty thumbnail selects that slot as the next capture slot.
 - [x] Per-shot timer option.
 - [x] Review thumbnails.
 - [x] Final strip actions only after all slots have filtered results.
@@ -16,6 +17,7 @@
 - [x] Pose guide per slot.
 - [x] Timer choices: Off, 3s, 5s, 10s.
 - [x] Browser print layout for final strip.
+- [x] Dong Ho filter uses folk palette, ivory paper, black woodcut lines, and border.
 
 ## Next Product Gaps
 
@@ -36,6 +38,7 @@
 - [ ] Start app and confirm no backend error.
 - [ ] Start camera with permission granted.
 - [ ] Select `4 shots`, press `Start Session`, see `Slot 1/4`.
+- [ ] Click empty slot 3, verify it shows `Slot 3 - next` and the next capture fills slot 3.
 - [ ] Capture slot 1, see preview, press `Retake`, return to live camera.
 - [ ] Capture slot 1 again, press `Use Photo / OK`, choose a filter, press `Apply Filter`, then `Next Photo`.
 - [ ] Fill all 4 slots, verify `Make Strip` becomes enabled only after every slot has a filtered result.

@@ -25,6 +25,9 @@ assert.match(app, /acceptSlot\(.*currentSlotIndex.*pendingShot/s, "OK must accep
 assert.doesNotMatch(app, /const nextIndex=nextShots\.findIndex/, "OK must not auto-advance before a filter is applied");
 assert.match(app, /function goToNextSlot/, "processed slots need an explicit next-photo action");
 assert.match(app, /currentShotProcessed/, "next-photo action must only show after current slot is processed");
+assert.match(app, /if\(shot\.status==="empty"\)/, "clicking an empty thumbnail must select it as the next capture slot");
+assert.match(app, /setBoothActive\(true\)/, "empty thumbnail selection must return to live capture");
+assert.match(app, /- next/, "selected empty thumbnail must show next capture state");
 assert.match(app, /retakeSlot\(prev,currentSlotIndex\)/, "retake must reset only current slot");
 assert.match(app, /allSlotsReady\(boothShots\)/, "bulk actions must require all slots ready");
 assert.match(app, /disabled=\{loading\|\|!slotsReady\}/, "Apply All and Make Strip must stay disabled until ready");

@@ -67,6 +67,7 @@ Ghi chú scope project:
 - Camera preview phải mirror ngang như người dùng soi gương; ảnh capture phải cùng hướng với preview.
 - Button capture phải lớn, dễ bấm trên mobile; trạng thái disabled phải rõ.
 - Với 4/6 shots luôn hiển thị `Slot x/n` và số ảnh đã OK.
+- Click ô trống trong strip phải chọn ô đó làm slot chụp tiếp theo; click ô có ảnh chỉ mở review/sửa ảnh.
 - Sau capture phải hiện hai quyết định rõ: `Use Photo / OK` và `Retake`.
 - Sau `Use Photo / OK`, người dùng phải chọn filter và `Apply Filter` cho slot đó trước khi qua slot tiếp theo.
 - Không cho `Make Strip / Download Strip / Print Strip` khi chưa đủ slot đã apply filter.
@@ -84,7 +85,8 @@ Nên làm tiếp trong web:
 3. **Đã làm - Pose guide**: gợi ý pose nhanh theo slot 1-4/6.
 4. **Đã làm - Timer options**: Off/3s/5s/10s theo từng lần chụp.
 5. **Đã làm - Print stylesheet / browser print**: hỗ trợ in contact sheet từ trình duyệt, không thêm endpoint.
-6. **Chưa làm - QR/download bản số qua link thật**: chỉ nên thêm khi có backend storage/share URL; hiện tại download PNG là đủ cho demo.
+6. **Đã làm - Đông Hồ đúng hơn**: palette màu tự nhiên ít màu, giấy điệp ngà, nét khắc gỗ đen, viền tranh dân gian.
+7. **Chưa làm - QR/download bản số qua link thật**: chỉ nên thêm khi có backend storage/share URL; hiện tại download PNG là đủ cho demo.
 
 Không nên làm ngay:
 
