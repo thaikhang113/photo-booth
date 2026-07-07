@@ -45,6 +45,7 @@ export default function CameraBooth({
   const visionPublishRef = useRef({ key: '', time: 0 });
   const visionRef = useRef({ faceLandmarker: null, gestureRecognizer: null, frameId: 0 });
   const timerRef = useRef({ cancelled: false });
+  const autoStartCameraRef = useRef(false);
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState('');
   const [livePreview, setLivePreview] = useState(false);
@@ -170,7 +171,7 @@ export default function CameraBooth({
     return () => { cancelled = true; clearInterval(timer); };
   }, [livePreview, cameraOn, capturedUrl, loading, boothActive, timerRunning, onLivePreviewFrame]);
 
-  async function startCamera() {
+  async function startCamera({ auto = false } = {}) {
     setError('');
     try {
       streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -180,9 +181,15 @@ export default function CameraBooth({
       setCameraOn(true);
     } catch (err) {
       setCameraOn(false);
-      setError(`Cannot open webcam (${err?.name || 'Error'}). Close other camera apps/tabs, then Start Camera again.`);
+      setError(`${auto ? 'Auto camera blocked' : 'Cannot open webcam'} (${err?.name || 'Error'}). Close other camera apps/tabs, then Start Camera again.`);
     }
   }
+
+  useEffect(() => {
+    if (autoStartCameraRef.current) return;
+    autoStartCameraRef.current = true;
+    startCamera({ auto: true });
+  }, []);
 
   function drawCameraFrame(video, canvas) {
     canvas.width = video.videoWidth || 960;

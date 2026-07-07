@@ -5,6 +5,8 @@ const camera = readFileSync(new URL("./components/CameraBooth.jsx", import.meta.
 const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
 
 assert.match(camera, /Start Session/, "multi-shot booth must start a manual session");
+assert.match(camera, /autoStartCameraRef/, "camera should attempt one automatic start when the booth loads");
+assert.match(camera, /startCamera\(\{ auto: true \}\)/, "automatic camera start must use the same camera startup path");
 assert.match(camera, /timerOptions\(\)\.map/, "timer choices must render from shared 0/3/5/10 options");
 assert.match(camera, /Pose/, "multi-shot session must show pose guidance");
 assert.match(camera, /Use Photo \/ OK/, "captured slot preview must require explicit OK");
