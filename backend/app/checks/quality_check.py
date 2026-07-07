@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from pathlib import Path
 
 from app.services.costume_filter import apply_costume
 from app.services.landmark_filter import apply_landmark
@@ -54,6 +55,14 @@ def main():
     tuong = apply_tuong(image, metadata)
     assert _changed_ratio(image[50:150, 105:215], tuong[50:150, 105:215]) > 0.12, "tuong should affect detected face"
     assert _changed_ratio(image[:40], tuong[:40]) < 0.08, "tuong should not paint random background"
+
+    asset = Path(__file__).resolve().parents[1] / "assets" / "tuong" / "tuong_mask.png"
+    assert asset.exists(), "tuong should use a real raster mask asset"
+    assert cv2.imread(str(asset), cv2.IMREAD_UNCHANGED) is not None, "tuong asset should be readable"
+
+    blank = np.full((160, 220, 3), (40, 70, 90), dtype=np.uint8)
+    no_face = apply_tuong(blank, {})
+    assert _changed_ratio(blank, no_face) < 0.01, "tuong should not draw when no face is detected"
 
     print("quality check ok")
 

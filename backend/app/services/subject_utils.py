@@ -8,6 +8,9 @@ def face_rects(image: np.ndarray, metadata: dict | None = None) -> list[tuple[in
     rects = _landmark_rects(image, metadata)
     if rects:
         return rects
+    rects = _mediapipe_face_rects(image)
+    if rects:
+        return rects
     return [tuple(map(int, face)) for face in detect_faces(image)]
 
 
@@ -95,6 +98,33 @@ def _mediapipe_subject_mask(image: np.ndarray) -> np.ndarray | None:
     if coverage < 0.02 or coverage > 0.88:
         return None
     return _smooth(mask)
+
+
+def _mediapipe_face_rects(image: np.ndarray) -> list[tuple[int, int, int, int]]:
+    try:
+        import mediapipe as mp
+    except Exception:
+        return []
+
+    try:
+        detector = mp.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.45)
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        result = detector.process(rgb)
+        detector.close()
+    except Exception:
+        return []
+
+    h, w = image.shape[:2]
+    rects = []
+    for detection in getattr(result, "detections", None) or []:
+        box = detection.location_data.relative_bounding_box
+        x = max(0, int(box.xmin * w))
+        y = max(0, int(box.ymin * h))
+        rw = min(w - x, max(1, int(box.width * w)))
+        rh = min(h - y, max(1, int(box.height * h)))
+        if rw >= 24 and rh >= 24:
+            rects.append((x, y, rw, rh))
+    return rects
 
 
 def _mark_person_seed(seed: np.ndarray, x: int, y: int, w: int, h: int) -> None:

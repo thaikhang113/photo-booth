@@ -1,6 +1,7 @@
-import { Camera, RefreshCcw, Send, Video } from 'lucide-react';
+import { Camera, RefreshCcw, Send, Timer, Video } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { FaceLandmarker, FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
+import { boothShotTargets } from '../boothUtils.mjs';
 
 const VISION_WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
 const FACE_MODEL_URL =
@@ -15,6 +16,10 @@ export default function CameraBooth({
   loading,
   visionReady: parentVisionReady,
   visionError: parentVisionError,
+  boothMode,
+  boothShotCount,
+  onBoothMode,
+  onBoothStart,
   onCapture,
   onApply,
   onReset,
@@ -27,9 +32,13 @@ export default function CameraBooth({
   const gestureActionsRef = useRef({ onApply, onReset });
   const visionPublishRef = useRef({ key: '', time: 0 });
   const visionRef = useRef({ faceLandmarker: null, gestureRecognizer: null, frameId: 0 });
+  const sessionRef = useRef({ cancelled: false });
   const [cameraOn, setCameraOn] = useState(false);
   const [error, setError] = useState('');
   const [livePreview, setLivePreview] = useState(false);
+  const [countdown, setCountdown] = useState(null);
+  const [sessionRunning, setSessionRunning] = useState(false);
+  const [sessionProgress, setSessionProgress] = useState(0);
   const [faceLandmarks, setFaceLandmarks] = useState([]);
   const [handGesture, setHandGesture] = useState('None');
   const [visionReady, setVisionReady] = useState(false);
@@ -73,6 +82,7 @@ export default function CameraBooth({
 
     return () => {
       cancelled = true;
+      sessionRef.current.cancelled = true;
       streamRef.current?.getTracks().forEach((track) => track.stop());
       cancelAnimationFrame(visionRef.current.frameId);
       visionRef.current.faceLandmarker?.close();
@@ -94,7 +104,7 @@ export default function CameraBooth({
   }, [onApply, onReset]);
 
   useEffect(() => {
-    if (!cameraOn || !visionReady || capturedUrl) return undefined;
+    if (!cameraOn || !visionReady || (capturedUrl && !sessionRunning)) return undefined;
 
     function detectFrame() {
       const video = videoRef.current;
@@ -115,11 +125,11 @@ export default function CameraBooth({
 
     visionRef.current.frameId = requestAnimationFrame(detectFrame);
     return () => cancelAnimationFrame(visionRef.current.frameId);
-  }, [cameraOn, visionReady, capturedUrl]);
+  }, [cameraOn, visionReady, capturedUrl, sessionRunning]);
 
 
   useEffect(() => {
-    if (!handGesture || !visionReady) return undefined;
+    if (!handGesture || !visionReady || sessionRunning) return undefined;
     const timer = setTimeout(() => {
       if (["Pointing_Up", "Thumb_Up"].includes(handGesture)) {
         window.dispatchEvent(new CustomEvent("gesture-next"));
@@ -130,11 +140,11 @@ export default function CameraBooth({
       }
     }, 800);
     return () => clearTimeout(timer);
-  }, [handGesture, visionReady]);
+  }, [handGesture, visionReady, sessionRunning]);
 
 
   useEffect(() => {
-    if (!livePreview || !cameraOn || capturedUrl || loading || !onLivePreviewFrame) return undefined;
+    if (!livePreview || !cameraOn || capturedUrl || loading || sessionRunning || !onLivePreviewFrame) return undefined;
     let cancelled = false;
     const timer = setInterval(() => {
       const video = videoRef.current;
@@ -148,7 +158,7 @@ export default function CameraBooth({
       }, 'image/png');
     }, 650);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [livePreview, cameraOn, capturedUrl, loading, onLivePreviewFrame]);
+  }, [livePreview, cameraOn, capturedUrl, loading, sessionRunning, onLivePreviewFrame]);
 
   async function startCamera() {
     setError('');
@@ -164,23 +174,74 @@ export default function CameraBooth({
     }
   }
 
-  function capture() {
+  function captureFrame({ append = false } = {}) {
     if (!videoRef.current || !cameraOn) {
       setError('Hãy bấm Start Camera trước khi chụp.');
-      return;
+      return Promise.resolve(false);
     }
     const video = videoRef.current;
     const canvas = canvasRef.current;
     canvas.width = video.videoWidth || 960;
     canvas.height = video.videoHeight || 720;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => onCapture(blob, URL.createObjectURL(blob)), 'image/png');
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(false);
+          return;
+        }
+        onCapture(blob, URL.createObjectURL(blob), {
+          append,
+          faceLandmarks: displayFaceLandmarks,
+          handGesture: displayHandGesture,
+        });
+        resolve(true);
+      }, 'image/png');
+    });
+  }
+
+  function capture() {
+    captureFrame();
+  }
+
+  async function startBooth() {
+    if (!cameraOn) {
+      setError('Hãy bấm Start Camera trước khi chạy photobooth.');
+      return;
+    }
+    if (sessionRunning) return;
+    sessionRef.current.cancelled = false;
+    setError('');
+    setSessionRunning(true);
+    setSessionProgress(0);
+    onBoothStart?.();
+    for (let shot = 1; shot <= boothMode; shot += 1) {
+      for (let t = 10; t > 0; t -= 1) {
+        if (sessionRef.current.cancelled) return;
+        setCountdown(t);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      setCountdown(0);
+      const ok = await captureFrame({ append: true });
+      if (!ok) break;
+      setSessionProgress(shot);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+    setCountdown(null);
+    setSessionRunning(false);
   }
 
   function resetAll() {
     setError('');
+    setCountdown(null);
+    setSessionRunning(false);
+    setSessionProgress(0);
+    sessionRef.current.cancelled = true;
     onReset();
   }
+
+  const flatLandmarks = displayFaceLandmarks.flat().length;
+  const faceDetected = flatLandmarks > 0;
 
   return (
     <section className="camera-card">
@@ -192,11 +253,12 @@ export default function CameraBooth({
         <span className={cameraOn ? 'status-pill live' : 'status-pill'}>{cameraOn ? 'Live' : 'Idle'}</span>
       </div>
       <div className="preview-frame">
-        {capturedUrl ? (
+        {capturedUrl && !sessionRunning ? (
           <img src={capturedUrl} alt="Ảnh vừa chụp" />
         ) : (
           <video ref={videoRef} aria-label="Webcam preview" autoPlay playsInline muted />
         )}
+        {countdown !== null && <div className="countdown-overlay">{countdown || 'Chụp'}</div>}
         {!cameraOn && !capturedUrl && <div className="empty-state">Webcam preview</div>}
       </div>
       {error && <p className="message error">{error}</p>}
@@ -205,20 +267,34 @@ export default function CameraBooth({
           {displayVisionError ? 'Vision error' : displayVisionReady ? 'Vision ready' : 'Vision loading'}
         </span>
         <span>Gesture: {displayHandGesture}</span>
-        <span>Landmarks: {displayFaceLandmarks.flat().length}</span>
+        <span className={faceDetected ? 'status-pill live' : 'status-pill error'}>{faceDetected ? 'Face detected' : 'No face'}</span>
+        <span>Landmarks: {flatLandmarks}</span>
       </div>
       {displayVisionError && <p className="message error">{displayVisionError}</p>}
+      <div className="booth-controls" aria-label="Photo booth mode">
+        {boothShotTargets().map((target) => (
+          <button key={target} type="button" className={boothMode === target ? 'opt-btn active' : 'opt-btn'} disabled={sessionRunning} onClick={() => onBoothMode?.(target)}>
+            {target === 1 ? 'Single' : `${target} shots`}
+          </button>
+        ))}
+        {boothMode > 1 && <span className="booth-progress">{sessionProgress || boothShotCount}/{boothMode}</span>}
+      </div>
       <div className="toolbar">
-        <button type="button" onClick={startCamera}>
+        <button type="button" onClick={startCamera} disabled={sessionRunning}>
           <Video size={18} /> Start Camera
         </button>
-        <button type="button" onClick={capture}>
+        <button type="button" onClick={capture} disabled={sessionRunning}>
           <Camera size={18} /> Capture
         </button>
-        <button type="button" disabled={!capturedUrl || loading} onClick={onApply}>
+        {boothMode > 1 && (
+          <button type="button" onClick={startBooth} disabled={!cameraOn || sessionRunning || loading}>
+            <Timer size={18} /> Start Booth
+          </button>
+        )}
+        <button type="button" disabled={!capturedUrl || loading || sessionRunning} onClick={onApply}>
           <Send size={18} /> {loading ? 'Đang xử lý...' : 'Apply Filter'}
         </button>
-        <button type="button" className={livePreview ? 'ghost active' : 'ghost'} onClick={() => setLivePreview(!livePreview)}>
+        <button type="button" className={livePreview ? 'ghost active' : 'ghost'} disabled={sessionRunning} onClick={() => setLivePreview(!livePreview)}>
           Live Preview
         </button>
         <button type="button" className="ghost" onClick={resetAll}>
