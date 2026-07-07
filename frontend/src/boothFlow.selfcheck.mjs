@@ -1,0 +1,20 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const camera = readFileSync(new URL("./components/CameraBooth.jsx", import.meta.url), "utf8");
+const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+
+assert.match(camera, /Start Session/, "multi-shot booth must start a manual session");
+assert.match(camera, /Timer 10s/, "timer must be an optional per-shot capture control");
+assert.match(camera, /Use Photo \/ OK/, "captured slot preview must require explicit OK");
+assert.match(camera, /Retake/, "captured slot preview must allow retake");
+assert.doesNotMatch(camera, /Start Booth/, "old auto booth button must not return");
+assert.doesNotMatch(camera, /append/, "capture should no longer append auto-loop shots");
+
+assert.match(app, /createBoothSlots\(boothMode\)/, "session must create fixed slots");
+assert.match(app, /acceptSlot\(.*currentSlotIndex.*pendingShot/s, "OK must accept pending shot into current slot");
+assert.match(app, /retakeSlot\(prev,currentSlotIndex\)/, "retake must reset only current slot");
+assert.match(app, /allSlotsReady\(boothShots\)/, "bulk actions must require all slots ready");
+assert.match(app, /disabled=\{loading\|\|!slotsReady\}/, "Apply All and Make Strip must stay disabled until ready");
+
+console.log("booth flow self-check ok");

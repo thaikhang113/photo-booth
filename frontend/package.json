@@ -2,6 +2,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node src/boothUtils.selfcheck.mjs && node src/boothFlow.selfcheck.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
