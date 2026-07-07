@@ -157,9 +157,7 @@ export default function CameraBooth({
       const video = videoRef.current;
       const canvas = canvasRef.current;
       if (!video || !canvas || video.readyState < 2 || cancelled) return;
-      canvas.width = video.videoWidth || 960;
-      canvas.height = video.videoHeight || 720;
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      drawCameraFrame(video, canvas);
       canvas.toBlob((blob) => {
         if (!cancelled && blob) onLivePreviewFrame(blob);
       }, 'image/png');
@@ -181,6 +179,17 @@ export default function CameraBooth({
     }
   }
 
+  function drawCameraFrame(video, canvas) {
+    canvas.width = video.videoWidth || 960;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
   function captureFrame() {
     if (!videoRef.current || !cameraOn) {
       setError('Start Camera before capture.');
@@ -188,9 +197,7 @@ export default function CameraBooth({
     }
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 960;
-    canvas.height = video.videoHeight || 720;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    drawCameraFrame(video, canvas);
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) {
