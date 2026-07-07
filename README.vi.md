@@ -5,9 +5,10 @@
 ## Tính năng
 
 - Webcam preview, capture, apply filter, live preview, reset, download result.
-- 6 bộ lọc: Tranh Đông Hồ, Du Hành Thời Gian, Địa Danh Việt Nam, Trang Phục Truyền Thống, Tết Việt Nam, Nghệ Thuật Tuồng.
+- 3 bộ lọc: Tranh Đông Hồ, Địa Danh Việt Nam, Tết Việt Nam.
 - Tách người/nền cho Địa Danh và Tết bằng MediaPipe Selfie Segmentation, fallback OpenCV GrabCut.
-- Nhận diện mặt/face landmarks từ browser MediaPipe để đặt nón, khăn, hiệu ứng Tuồng.
+- Tranh Đông Hồ dùng giấy điệp, màu dân gian, nét khắc gỗ, viền/caption.
+- Nhận diện mặt/face landmarks từ browser MediaPipe để hỗ trợ mask người/nền và metadata xử lý ảnh.
 - Nhận diện cử chỉ tay để đổi filter, apply, reset.
 - Backend không lưu ảnh đã xử lý trên server.
 
@@ -62,10 +63,10 @@ cd backend
 .\venv\Scripts\python.exe -m app.checks.regression_check
 .\venv\Scripts\python.exe -m app.checks.quality_check
 cd ..\frontend
+npm test
 npm run build
 ```
 
 ## Trạng thái theo DOCX
 
 Checklist nằm ở [docs/docx-requirements-checklist.md](docs/docx-requirements-checklist.md).
-

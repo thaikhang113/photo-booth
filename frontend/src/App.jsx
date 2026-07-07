@@ -8,11 +8,8 @@ import { fetchFilters, processImage } from "./services/api.js";
 
 const FILTER_DEFAULTS = [
   { type: "dong_ho", name: "Tranh Đông Hồ" },
-  { type: "time_travel", name: "Du Hành Thời Gian", modes: ["1980", "modern", "future"] },
   { type: "landmark", name: "Địa Danh Việt Nam", opts: ["hoi_an", "hue", "ho_guom", "ha_long"] },
-  { type: "costume", name: "Trang Phục Truyền Thống", opts: ["non_la", "khan_dong", "khan_ran"] },
   { type: "tet", name: "Tết Việt Nam", tetLocations: ["home", "street", "flower_market"] },
-  { type: "tuong", name: "Nghệ Thuật Tuồng" },
 ];
 
 function withFallbackMeta(filters) {

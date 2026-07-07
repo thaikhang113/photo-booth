@@ -1,13 +1,10 @@
 import cv2
 import numpy as np
-from pathlib import Path
 
-from app.services.costume_filter import apply_costume
-from app.services.dong_ho_filter import apply_dong_ho
+from app.services.dong_ho_filter import _nearest_palette, apply_dong_ho
 from app.services.landmark_filter import apply_landmark
+from app.services.subject_utils import subject_mask
 from app.services.tet_filter import apply_tet
-from app.services.time_travel_filter import apply_time_travel
-from app.services.tuong_filter import apply_tuong
 
 
 FACE_LANDMARKS = [[
@@ -34,6 +31,11 @@ def _changed_ratio(a, b):
 
 
 def main():
+    palette_probe = np.array([(214, 224, 236), (33, 28, 24)], dtype=np.uint8)
+    mapped = _nearest_palette(np.array([[[255, 255, 255], [0, 0, 0]]], dtype=np.uint8), palette_probe)
+    assert tuple(mapped[0, 0]) == (214, 224, 236), "dong ho palette should map white to ivory, not black"
+    assert tuple(mapped[0, 1]) == (33, 28, 24), "dong ho palette should map black to woodblock black"
+
     image = _portrait()
     metadata = {"faceLandmarks": FACE_LANDMARKS, "filterOptions": {}}
 
@@ -42,14 +44,33 @@ def main():
     border = np.concatenate([dong_ho[:8].reshape(-1, 3), dong_ho[-8:].reshape(-1, 3), dong_ho[:, :8].reshape(-1, 3), dong_ho[:, -8:].reshape(-1, 3)])
     dark_ratio = float(np.mean(np.all(dong_ho < 55, axis=2)))
     paper_ratio = float(np.mean((dong_ho[:, :, 0] > 190) & (dong_ho[:, :, 1] > 195) & (dong_ho[:, :, 2] > 205)))
-    assert palette_size < 80, "dong ho should use a restrained folk palette"
+    mask = subject_mask(image, metadata) > 0.55
+    background = ~mask
+    background[:12, :] = False
+    background[-12:, :] = False
+    background[:, :12] = False
+    background[:, -12:] = False
+    background_dark_ratio = float(np.mean(np.all(dong_ho[background] < 55, axis=1)))
+    subject_dark_ratio = float(np.mean(np.all(dong_ho[mask] < 55, axis=1)))
+    background_paper_ratio = float(np.mean((dong_ho[background, 0] > 190) & (dong_ho[background, 1] > 195) & (dong_ho[background, 2] > 205)))
+    cool_gray_ratio = float(np.mean(
+        (np.abs(dong_ho[:, :, 0].astype(np.int16) - dong_ho[:, :, 1].astype(np.int16)) < 18)
+        & (np.abs(dong_ho[:, :, 1].astype(np.int16) - dong_ho[:, :, 2].astype(np.int16)) < 18)
+        & (dong_ho.mean(axis=2) > 65)
+        & (dong_ho.mean(axis=2) < 180)
+    ))
+    red_ink = (dong_ho[:, :, 2] > 100) & (dong_ho[:, :, 1] < 90) & (dong_ho[:, :, 0] < 90)
+    lower_caption_ratio = float(np.mean(red_ink[-45:-12, 36:-36]))
+    upper_subject_ratio = float(np.mean(red_ink[30:110, 72:-72]))
+    assert 12 <= palette_size < 120, "dong ho should use restrained colors plus subtle diep-paper texture"
     assert float(border.mean()) < float(dong_ho.mean()) - 20, "dong ho should add a dark folk-art border"
     assert dark_ratio > 0.05, "dong ho should have visible black woodcut lines"
     assert paper_ratio > 0.08, "dong ho should preserve ivory diep-paper tones"
-
-    future = apply_time_travel(image, {"filterOptions": {"timeTravelMode": "future"}})
-    assert future[:, :, 0].mean() > image[:, :, 0].mean(), "future should add clean blue/cyan light"
-    assert future[:, :, 2].mean() > image[:, :, 2].mean() - 5, "future should not crush warm face tones"
+    assert background_paper_ratio > 0.70, "dong ho should replace busy background with ivory diep paper"
+    assert background_dark_ratio < subject_dark_ratio * 0.65, "dong ho should keep background cleaner than the subject"
+    assert cool_gray_ratio < 0.12, "dong ho should not be dominated by cool classroom grays"
+    assert lower_caption_ratio > 0.01, "dong ho caption/red ink should sit in the lower folk border"
+    assert upper_subject_ratio < 0.005, "dong ho caption should not cover the face/top subject area"
 
     landmark = apply_landmark(image, {"faceLandmarks": FACE_LANDMARKS, "filterOptions": {"landmark": "ha_long"}})
     assert _changed_ratio(image[:60], landmark[:60]) > 0.35, "landmark should replace background"
@@ -58,22 +79,6 @@ def main():
     tet = apply_tet(image, {"faceLandmarks": FACE_LANDMARKS, "filterOptions": {"tetLocation": "flower_market"}})
     assert _changed_ratio(image[:60], tet[:60]) > 0.35, "tet should replace background"
     assert _changed_ratio(image[70:170, 115:205], tet[70:170, 115:205]) < 0.75, "tet should preserve subject"
-
-    non_la = apply_costume(image, {"faceLandmarks": FACE_LANDMARKS, "filterOptions": {"costume": "non_la"}})
-    assert _changed_ratio(image[:115], non_la[:115]) > 0.05, "non la should be placed from face landmarks"
-    assert _changed_ratio(image[125:], non_la[125:]) < 0.08, "non la should not cover body/background"
-
-    tuong = apply_tuong(image, metadata)
-    assert _changed_ratio(image[50:150, 105:215], tuong[50:150, 105:215]) > 0.12, "tuong should affect detected face"
-    assert _changed_ratio(image[:40], tuong[:40]) < 0.08, "tuong should not paint random background"
-
-    asset = Path(__file__).resolve().parents[1] / "assets" / "tuong" / "tuong_mask.png"
-    assert asset.exists(), "tuong should use a real raster mask asset"
-    assert cv2.imread(str(asset), cv2.IMREAD_UNCHANGED) is not None, "tuong asset should be readable"
-
-    blank = np.full((160, 220, 3), (40, 70, 90), dtype=np.uint8)
-    no_face = apply_tuong(blank, {})
-    assert _changed_ratio(blank, no_face) < 0.01, "tuong should not draw when no face is detected"
 
     print("quality check ok")
 

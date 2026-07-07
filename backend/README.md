@@ -22,6 +22,4 @@ Anh ket qua duoc tra ve trong response, khong luu file tren server.
 ## Assets
 
 - `app/assets/backgrounds`: `hoi_an.jpg`, `hue.jpg`, `ho_guom.jpg`, `ha_long.jpg`
-- `app/assets/costumes`: `non_la.png`, `khan_dong.png`
 - `app/assets/tet`: PNG trang tri Tet
-- `app/assets/tuong`: PNG/texture Tuong

@@ -5,9 +5,10 @@ A web Photo Booth app that opens the webcam, captures a photo, lets users select
 ## Features
 
 - Webcam preview, capture, apply filter, live preview, reset, and download result.
-- 6 filters: Dong Ho Painting, Time Travel, Vietnam Landmarks, Traditional Costumes, Vietnamese Tet, and Tuong Art.
+- 3 filters: Dong Ho Painting, Vietnam Landmarks, and Vietnamese Tet.
 - Person/background segmentation for Landmark and Tet filters using MediaPipe Selfie Segmentation, with OpenCV GrabCut fallback.
-- Browser MediaPipe face landmarks for hat/scarf placement and Tuong face effects.
+- Dong Ho filter uses ivory diep paper, folk colors, woodcut lines, border, and caption.
+- Browser MediaPipe face landmarks support subject masks and image-processing metadata.
 - Hand gesture recognition for filter navigation, apply, and reset.
 - Processed photos are returned in memory and are not persisted on the server.
 
@@ -62,10 +63,10 @@ cd backend
 .\venv\Scripts\python.exe -m app.checks.regression_check
 .\venv\Scripts\python.exe -m app.checks.quality_check
 cd ..\frontend
+npm test
 npm run build
 ```
 
 ## DOCX Status
 
 See [docs/docx-requirements-checklist.md](docs/docx-requirements-checklist.md).
-

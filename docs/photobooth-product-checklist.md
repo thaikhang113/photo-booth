@@ -17,7 +17,7 @@
 - [x] Pose guide per slot.
 - [x] Timer choices: Off, 3s, 5s, 10s.
 - [x] Browser print layout for final strip.
-- [x] Dong Ho filter uses folk palette, ivory paper, black woodcut lines, and border.
+- [x] Dong Ho filter uses natural folk palette, ivory diep paper texture, black woodcut lines, slight woodblock misregistration, lower caption, and folk border.
 
 ## Next Product Gaps
 
