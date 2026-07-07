@@ -220,23 +220,29 @@ export default function App() {
   function usePendingShot(){
     if(!pendingShot){setError("Hãy chụp ảnh trước khi bấm OK.");return;}
     const nextShots=acceptSlot(boothShots,currentSlotIndex,pendingShot);
-    const nextIndex=nextShots.findIndex((shot)=>shot.status==="empty");
     setBoothShots(nextShots);
     setPendingShot(null);
     setResultUrl("");
     setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
-    if(nextIndex!==-1){
-      setCurrentSlotIndex(nextIndex);
-      setSelectedShotIndex(nextIndex);
-      setCapturedUrl("");
-      setCaptureBlob(null);
-      setBoothActive(true);
-      setReviewMode(false);
-      return;
-    }
     setSelectedShotIndex(currentSlotIndex);
     setBoothActive(false);
     setReviewMode(true);
+  }
+
+  function goToNextSlot(){
+    const nextIndex=boothShots.findIndex((shot)=>shot.status==="empty");
+    if(nextIndex===-1){
+      finishSession();
+      return;
+    }
+    clearPendingShot();
+    setCurrentSlotIndex(nextIndex);
+    setSelectedShotIndex(nextIndex);
+    setCapturedUrl("");
+    setCaptureBlob(null);
+    setResultUrl("");
+    setBoothActive(true);
+    setReviewMode(false);
   }
 
   function retakeCurrentShot(){
@@ -359,6 +365,8 @@ export default function App() {
   const templateOptions=boothTemplates(boothShots.length||boothMode);
   const selectedShot=boothShots[selectedShotIndex];
   const selectedCrop=selectedShot?.crop||defaultCrop();
+  const currentShotProcessed=selectedShot?.status==="processed";
+  const nextSlotAvailable=boothShots.some((shot)=>shot.status==="empty");
 
   return (<main className="app-shell">
     <Header/>
@@ -373,8 +381,9 @@ export default function App() {
         loading={loading} visionReady={visionReady} visionError={visionError}
         boothMode={boothMode} boothShotCount={acceptedCount} currentSlotIndex={currentSlotIndex}
         pendingShot={pendingShot} boothActive={boothActive} reviewMode={reviewMode} slotsReady={slotsReady}
+        currentShotProcessed={currentShotProcessed} nextSlotAvailable={nextSlotAvailable}
         onBoothMode={changeBoothMode} onBoothStart={startBoothSession} onUsePhoto={usePendingShot}
-        onRetake={retakeCurrentShot} onFinishSession={finishSession}
+        onRetake={retakeCurrentShot} onNextSlot={goToNextSlot} onFinishSession={finishSession}
         onCapture={handleCapture} onApply={handleApply} onReset={reset} onVisionUpdate={handleVisionUpdate} onLivePreviewFrame={handleLivePreviewFrame}/>
       <FilterPanel filters={filters} selected={selectedFilter} filterOptions={filterOptions}
         onSelect={changeFilter} onFilterOptions={onChangeFilterOptions}/>

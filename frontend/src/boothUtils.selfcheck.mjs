@@ -33,11 +33,13 @@ assert.equal(retaken[0].url, "a.png");
 assert.equal(retaken[1].status, "empty");
 assert.equal(retaken[1].url, "");
 
-const ready = [0, 1, 2, 3].reduce(
+const acceptedReady = [0, 1, 2, 3].reduce(
   (slots, index) => acceptSlot(slots, index, { ...pending, url: `${index}.png` }),
   createBoothSlots(4),
 );
-assert.equal(allSlotsReady(ready), true);
+assert.equal(allSlotsReady(acceptedReady), false, "final strip should wait until each slot has a processed filter result");
+const processedReady = acceptedReady.map((slot) => ({ ...slot, resultUrl: `processed-${slot.id}.png`, status: "processed" }));
+assert.equal(allSlotsReady(processedReady), true);
 assert.deepEqual(contactSheetLayout(4), { cols: 2, rows: 2 });
 assert.deepEqual(contactSheetLayout(6), { cols: 3, rows: 2 });
 assert.deepEqual(timerOptions().map((option) => option.seconds), [0, 3, 5, 10]);

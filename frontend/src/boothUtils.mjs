@@ -38,7 +38,7 @@ export function retakeSlot(slots, index) {
 }
 
 export function allSlotsReady(slots) {
-  return slots.length > 0 && slots.every((slot) => slot.status === "accepted" || slot.status === "processed");
+  return slots.length > 0 && slots.every((slot) => slot.status === "processed");
 }
 
 export function contactSheetLayout(count, templateId = "") {

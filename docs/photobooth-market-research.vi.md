@@ -38,10 +38,10 @@ Flow web nên áp dụng:
 
 1. Chọn `Single`, `4 shots`, hoặc `6 shots`.
 2. Với 4/6: bấm `Start Session`, app tạo slot rỗng cố định.
-3. Mỗi slot: live mirror preview -> `Capture` hoặc `Timer 10s` -> preview ảnh vừa chụp.
-4. Người dùng bấm `Use Photo / OK` mới lưu slot; `Retake` giữ lại slot hiện tại.
-5. Sau khi đủ slot: vào review, chọn từng ảnh để retake/apply riêng.
-6. `Apply All`, `Make Strip`, `Download Strip` chỉ bật khi đủ slot.
+3. Mỗi slot: live mirror preview -> `Capture` hoặc timer -> preview ảnh vừa chụp.
+4. Người dùng bấm `Use Photo / OK` mới giữ ảnh slot hiện tại; `Retake` chụp lại slot đó.
+5. Chọn filter cho slot hiện tại, bấm `Apply Filter`; sau khi slot có kết quả mới bấm `Next Photo`.
+6. Sau khi tất cả slot đã apply filter: chọn frame/template, chỉnh crop/zoom nếu cần, rồi `Make Strip`, `Download Strip`, hoặc `Print Strip`.
 
 Ghi chú scope project:
 
@@ -68,7 +68,8 @@ Ghi chú scope project:
 - Button capture phải lớn, dễ bấm trên mobile; trạng thái disabled phải rõ.
 - Với 4/6 shots luôn hiển thị `Slot x/n` và số ảnh đã OK.
 - Sau capture phải hiện hai quyết định rõ: `Use Photo / OK` và `Retake`.
-- Không cho `Apply All / Make Strip / Download Strip` khi chưa đủ slot.
+- Sau `Use Photo / OK`, người dùng phải chọn filter và `Apply Filter` cho slot đó trước khi qua slot tiếp theo.
+- Không cho `Make Strip / Download Strip / Print Strip` khi chưa đủ slot đã apply filter.
 - Review strip phải cho chọn từng thumbnail, retake từng ảnh, apply filter riêng.
 - Nên có frame/template chọn trước hoặc trước khi xuất strip.
 - Sau khi tạo strip cần có download rõ; nếu thêm QR thì QR phải trỏ tới blob/file hoặc backend storage hợp lệ.

@@ -24,10 +24,13 @@ export default function CameraBooth({
   boothActive,
   reviewMode,
   slotsReady,
+  currentShotProcessed,
+  nextSlotAvailable,
   onBoothMode,
   onBoothStart,
   onUsePhoto,
   onRetake,
+  onNextSlot,
   onFinishSession,
   onCapture,
   onApply,
@@ -333,6 +336,11 @@ export default function CameraBooth({
         {inMultiMode && capturedUrl && !pendingShot && (
           <button type="button" className="ghost" onClick={onRetake} disabled={loading}>
             <RotateCcw size={18} /> Retake
+          </button>
+        )}
+        {inMultiMode && currentShotProcessed && nextSlotAvailable && (
+          <button type="button" onClick={onNextSlot} disabled={loading}>
+            <Check size={18} /> Next Photo
           </button>
         )}
         {inMultiMode && reviewMode && (
