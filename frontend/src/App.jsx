@@ -3,7 +3,7 @@ import CameraBooth from "./components/CameraBooth.jsx";
 import FilterPanel from "./components/FilterPanel.jsx";
 import Header from "./components/Header.jsx";
 import ResultPreview from "./components/ResultPreview.jsx";
-import { contactSheetLayout } from "./boothUtils.mjs";
+import { acceptSlot, allSlotsReady, contactSheetLayout, createBoothSlots, retakeSlot } from "./boothUtils.mjs";
 import { fetchFilters, processImage } from "./services/api.js";
 
 const FILTER_DEFAULTS = [
@@ -36,6 +36,10 @@ export default function App() {
   const [boothMode,setBoothMode]=useState(1);
   const [boothShots,setBoothShots]=useState([]);
   const [selectedShotIndex,setSelectedShotIndex]=useState(0);
+  const [currentSlotIndex,setCurrentSlotIndex]=useState(0);
+  const [pendingShot,setPendingShot]=useState(null);
+  const [boothActive,setBoothActive]=useState(false);
+  const [reviewMode,setReviewMode]=useState(false);
   const [contactSheetUrl,setContactSheetUrl]=useState("");
   const livePreviewSeq = useRef(0);
 
@@ -45,6 +49,13 @@ export default function App() {
     shots.forEach((shot) => {
       if (shot.url) URL.revokeObjectURL(shot.url);
       if (shot.resultUrl) URL.revokeObjectURL(shot.resultUrl);
+    });
+  }, []);
+
+  const clearPendingShot = useCallback(() => {
+    setPendingShot((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url);
+      return null;
     });
   }, []);
 
@@ -58,20 +69,26 @@ export default function App() {
         faceLandmarks: info.faceLandmarks ?? faceLandmarks,
         handGesture: info.handGesture ?? handGesture,
       },
+      status: "pending_ok",
     };
     setCapturedUrl(url);
     setCaptureBlob(blob);
     setResultUrl("");
     setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
     setError("");
-    setBoothShots((prev)=>{
-      const base = info.append ? prev.slice(-(Math.max(boothMode, 1) - 1)) : [];
-      if (!info.append) revokeShotUrls(prev);
-      const next = [...base, shot];
-      setSelectedShotIndex(next.length - 1);
-      return next;
-    });
-  },[boothMode, faceLandmarks, handGesture, revokeShotUrls]);
+    if(boothMode>1&&boothActive){
+      clearPendingShot();
+      setPendingShot(shot);
+      setSelectedShotIndex(currentSlotIndex);
+      return;
+    }
+    clearPendingShot();
+    revokeShotUrls(boothShots);
+    setBoothShots([]);
+    setBoothActive(false);
+    setReviewMode(false);
+    setSelectedShotIndex(0);
+  },[boothActive, boothMode, boothShots, clearPendingShot, currentSlotIndex, faceLandmarks, handGesture, revokeShotUrls]);
   const handleApply=useCallback(async ()=>{
     if(!captureBlob){setError("Hãy chụp ảnh trước khi áp dụng bộ lọc.");return;}
     setLoading(true);setError("");
@@ -85,21 +102,25 @@ export default function App() {
       setBoothShots((prev)=>prev.map((shot,i)=>{
         if(i!==selectedShotIndex)return shot;
         if(shot.resultUrl)URL.revokeObjectURL(shot.resultUrl);
-        return {...shot,resultUrl:url};
+        return {...shot,resultUrl:url,status:"processed"};
       }));
     }catch(err){setError(err.message);}finally{setLoading(false);}
   },[boothShots, captureBlob, faceLandmarks, filterOptions, handGesture, resultUrl, selectedFilter, selectedShotIndex]);
   const reset=useCallback(()=>{
     revokeShotUrls(boothShots);
+    clearPendingShot();
     setCapturedUrl("");
     setResultUrl("");
     setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
     setBoothShots([]);
     setSelectedShotIndex(0);
+    setCurrentSlotIndex(0);
+    setBoothActive(false);
+    setReviewMode(false);
     setCaptureBlob(null);
     setError("");
     setFilterOptions({});
-  },[boothShots, revokeShotUrls]);
+  },[boothShots, clearPendingShot, revokeShotUrls]);
   const handleVisionUpdate=useCallback((s)=>{setFaceLandmarks(s.faceLandmarks);setHandGesture(s.handGesture);setVisionReady(s.visionReady);setVisionError(s.visionError);},[]);
   useEffect(() => {
     function h() {
@@ -123,23 +144,90 @@ export default function App() {
   function changeFilter(t){setSelectedFilter(t);setFilterOptions({});}
   function onChangeFilterOptions(o){setFilterOptions(o);}
 
-  function startBoothSession(){
+  function changeBoothMode(target){
     revokeShotUrls(boothShots);
+    clearPendingShot();
+    setBoothMode(target);
     setBoothShots([]);
     setSelectedShotIndex(0);
+    setCurrentSlotIndex(0);
+    setBoothActive(false);
+    setReviewMode(false);
     setCapturedUrl("");
     setCaptureBlob(null);
     setResultUrl("");
     setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
   }
 
+  function startBoothSession(){
+    revokeShotUrls(boothShots);
+    clearPendingShot();
+    setBoothShots(createBoothSlots(boothMode));
+    setSelectedShotIndex(0);
+    setCurrentSlotIndex(0);
+    setBoothActive(true);
+    setReviewMode(false);
+    setCapturedUrl("");
+    setCaptureBlob(null);
+    setResultUrl("");
+    setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
+    setError("");
+  }
+
   function selectShot(index){
     const shot=boothShots[index];
     if(!shot)return;
     setSelectedShotIndex(index);
+    setCurrentSlotIndex(index);
+    setBoothActive(false);
+    setReviewMode(true);
+    clearPendingShot();
     setCaptureBlob(shot.blob);
     setCapturedUrl(shot.url);
     setResultUrl(shot.resultUrl||"");
+  }
+
+  function usePendingShot(){
+    if(!pendingShot){setError("Hãy chụp ảnh trước khi bấm OK.");return;}
+    const nextShots=acceptSlot(boothShots,currentSlotIndex,pendingShot);
+    const nextIndex=nextShots.findIndex((shot)=>shot.status==="empty");
+    setBoothShots(nextShots);
+    setPendingShot(null);
+    setResultUrl("");
+    setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
+    if(nextIndex!==-1){
+      setCurrentSlotIndex(nextIndex);
+      setSelectedShotIndex(nextIndex);
+      setCapturedUrl("");
+      setCaptureBlob(null);
+      setBoothActive(true);
+      setReviewMode(false);
+      return;
+    }
+    setSelectedShotIndex(currentSlotIndex);
+    setBoothActive(false);
+    setReviewMode(true);
+  }
+
+  function retakeCurrentShot(){
+    clearPendingShot();
+    const shot=boothShots[currentSlotIndex];
+    if(shot?.url)URL.revokeObjectURL(shot.url);
+    if(shot?.resultUrl)URL.revokeObjectURL(shot.resultUrl);
+    setBoothShots((prev)=>retakeSlot(prev,currentSlotIndex));
+    setCapturedUrl("");
+    setCaptureBlob(null);
+    setResultUrl("");
+    setBoothActive(boothMode>1);
+    setReviewMode(false);
+    setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
+  }
+
+  function finishSession(){
+    if(!allSlotsReady(boothShots)){setError("Cần OK đủ slot trước khi Finish.");return;}
+    clearPendingShot();
+    setBoothActive(false);
+    setReviewMode(true);
   }
 
   async function loadImage(url){
@@ -152,7 +240,7 @@ export default function App() {
   }
 
   const buildContactSheet=useCallback(async(shots=boothShots)=>{
-    if(!shots.length)return "";
+    if(!allSlotsReady(shots))return "";
     const {cols,rows}=contactSheetLayout(shots.length);
     const cellW=420, cellH=315, gap=22, pad=34;
     const canvas=document.createElement("canvas");
@@ -185,13 +273,13 @@ export default function App() {
   },[boothShots]);
 
   const applyAllShots=useCallback(async()=>{
-    if(!boothShots.length)return;
+    if(!allSlotsReady(boothShots))return;
     setLoading(true);setError("");
     try{
       const processed=[];
       for(const shot of boothShots){
         const blob=await processImage(shot.blob,selectedFilter,{...shot.meta,filterOptions});
-        processed.push({...shot,resultUrl:URL.createObjectURL(blob)});
+        processed.push({...shot,resultUrl:URL.createObjectURL(blob),status:"processed"});
       }
       revokeShotUrls(boothShots.map((shot)=>({url:"",resultUrl:shot.resultUrl})));
       setBoothShots(processed);
@@ -216,6 +304,9 @@ export default function App() {
     }
   }, [faceLandmarks, handGesture, filterOptions, selectedFilter]);
 
+  const slotsReady=allSlotsReady(boothShots);
+  const acceptedCount=boothShots.filter((shot)=>shot.status==="accepted"||shot.status==="processed").length;
+
   return (<main className="app-shell">
     <Header/>
     {error&&<p className="message error global">{error}</p>}
@@ -227,23 +318,26 @@ export default function App() {
     <div className="booth-layout">
       <CameraBooth capturedUrl={capturedUrl} faceLandmarks={faceLandmarks} handGesture={handGesture}
         loading={loading} visionReady={visionReady} visionError={visionError}
-        boothMode={boothMode} boothShotCount={boothShots.length} onBoothMode={setBoothMode} onBoothStart={startBoothSession}
+        boothMode={boothMode} boothShotCount={acceptedCount} currentSlotIndex={currentSlotIndex}
+        pendingShot={pendingShot} boothActive={boothActive} reviewMode={reviewMode} slotsReady={slotsReady}
+        onBoothMode={changeBoothMode} onBoothStart={startBoothSession} onUsePhoto={usePendingShot}
+        onRetake={retakeCurrentShot} onFinishSession={finishSession}
         onCapture={handleCapture} onApply={handleApply} onReset={reset} onVisionUpdate={handleVisionUpdate} onLivePreviewFrame={handleLivePreviewFrame}/>
       <FilterPanel filters={filters} selected={selectedFilter} filterOptions={filterOptions}
         onSelect={changeFilter} onFilterOptions={onChangeFilterOptions}/>
     </div>
     {boothShots.length>0&&<section className="shot-strip" aria-label="Booth shots">
       <div className="shot-strip-head">
-        <div><p className="panel-kicker">Booth strip</p><h2>{boothShots.length} ảnh đã chụp</h2></div>
+        <div><p className="panel-kicker">Booth strip</p><h2>{acceptedCount}/{boothShots.length} ảnh đã OK</h2></div>
         <div className="shot-actions">
-          <button type="button" onClick={applyAllShots} disabled={loading}>Apply All</button>
-          <button type="button" className="ghost" onClick={()=>buildContactSheet()} disabled={loading}>Make Strip</button>
+          <button type="button" onClick={applyAllShots} disabled={loading||!slotsReady}>Apply All</button>
+          <button type="button" className="ghost" onClick={()=>buildContactSheet()} disabled={loading||!slotsReady}>Make Strip</button>
           <a className={!contactSheetUrl?"download disabled":"download"} href={contactSheetUrl||"#"} download="photo-booth-strip.png">Download Strip</a>
         </div>
       </div>
       <div className="shot-grid">
-        {boothShots.map((shot,i)=><button type="button" key={shot.id} className={selectedShotIndex===i?"shot-thumb active":"shot-thumb"} onClick={()=>selectShot(i)}>
-          <img src={shot.resultUrl||shot.url} alt={`Booth shot ${i+1}`} />
+        {boothShots.map((shot,i)=><button type="button" key={shot.id} className={`${selectedShotIndex===i?"shot-thumb active":"shot-thumb"} ${shot.status==="empty"?"empty":""}`} onClick={()=>selectShot(i)}>
+          {shot.url?<img src={shot.resultUrl||shot.url} alt={`Booth shot ${i+1}`} />:<div className="slot-placeholder">Slot {i+1}</div>}
           <span>{i+1}</span>
         </button>)}
       </div>

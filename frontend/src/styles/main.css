@@ -337,7 +337,7 @@ h2 {
 
 .toolbar {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   padding-top: 14px;
 }
@@ -439,6 +439,8 @@ h2 {
 .shot-thumb {
   position: relative;
   overflow: hidden;
+  display: grid;
+  place-items: center;
   aspect-ratio: 4 / 3;
   padding: 0;
   border: 3px solid transparent;
@@ -448,6 +450,20 @@ h2 {
 
 .shot-thumb.active {
   border-color: var(--gold);
+}
+
+.shot-thumb.empty {
+  color: #fff2bf;
+  background:
+    linear-gradient(90deg, rgba(242, 179, 61, 0.16) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(242, 179, 61, 0.16) 1px, transparent 1px),
+    #3a1914;
+  background-size: 24px 24px, 24px 24px, auto;
+}
+
+.slot-placeholder {
+  color: #fff2bf;
+  font-weight: 900;
 }
 
 .shot-thumb img {
