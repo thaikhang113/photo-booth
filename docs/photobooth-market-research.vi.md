@@ -43,11 +43,11 @@ Flow web nên áp dụng:
 5. Sau khi đủ slot: vào review, chọn từng ảnh để retake/apply riêng.
 6. `Apply All`, `Make Strip`, `Download Strip` chỉ bật khi đủ slot.
 
-Giá/gói tham khảo:
+Ghi chú scope project:
 
-- Life4cut Vietnam trên TripAdvisor ghi Basic Four Cuts 1+1 (2pcs) 70.000 VND, Multi Frame 1+1 (2pcs) 100.000 VND.
-- SimpleTech ghi giá thuê photobooth theo ngày khoảng 3.500.000 VND/ngày, theo tháng 18.000.000 VND/tháng.
-- Marry.vn ghi dịch vụ 96 Photobooth cho đám cưới từ 5.000.000 VND.
+- Bài project này không mô phỏng kinh doanh photobooth, nên bỏ payment, bảng giá và gói thuê khỏi yêu cầu sản phẩm.
+- Phần cần học theo thị trường là flow chụp: chọn frame/template, mirror preview, countdown, OK/Retake, chọn/căn ảnh, tạo strip, download/print.
+- QR chỉ nên làm khi có share URL thật từ backend/storage; không tạo QR cho blob local vì link mất sau khi đóng tab.
 
 ## 3. Bảng Tính Năng Thực Tế
 
@@ -55,10 +55,10 @@ Giá/gói tham khảo:
 | --- | --- | --- | --- |
 | Chọn gói | Chọn frame/gói/số bản in, đôi khi payment trước | Có Single/4/6; chưa có frame/gói/payment | Làm frame/template chooser, bỏ payment v1 |
 | Chuẩn bị | Mirror preview, props, hướng dẫn pose, nhân viên hỗ trợ | Có camera preview mirror, face/gesture status | Thêm pose guide nhẹ, không cần nhân viên |
-| Chụp | Countdown 5-10s, flash, timer tổng ở kiosk | Có `Timer 10s` theo shot, capture thủ công | Giữ theo-shot timer; thêm optional 3/5/10s sau |
-| Chọn ảnh | Chụp nhiều lần/chọn ảnh in | Có OK/Retake từng slot | Đúng hướng; thêm crop/zoom sau |
-| Filter/beauty | Filter, template, frame, sticker/branding | Có filter văn hoá, chưa có beauty/crop/sticker | Ưu tiên frame/template + crop; beauty sau |
-| In / chia sẻ | In 10-60s, QR/link/email/Zalo | Có download PNG, contact sheet; chưa QR/print | Web nên thêm QR/download share; print chỉ browser print |
+| Chụp | Countdown 5-10s, flash, timer tổng ở kiosk | Có timer từng shot: Off/3s/5s/10s, capture thủ công | Đạt cho web demo |
+| Chọn ảnh | Chụp nhiều lần/chọn ảnh in | Có OK/Retake từng slot, review thumbnail, crop/zoom/reposition | Đạt flow chính |
+| Filter/beauty | Filter, template, frame, sticker/branding | Có filter văn hoá, frame/template, crop/zoom; chưa beauty/sticker | Beauty/sticker bỏ qua v1 |
+| In / chia sẻ | In 10-60s, QR/link/email/Zalo | Có download PNG, contact sheet, browser print; chưa QR thật | QR chỉ thêm khi có storage/share URL thật |
 | Vận hành | Camera DSLR/fullframe, đèn, máy in, màn cảm ứng | Webcam/browser + backend image processing | Giữ web-first; không hứa chất lượng DSLR |
 
 ## 4. UX Checklist Cho App Web
@@ -78,12 +78,12 @@ Giá/gói tham khảo:
 
 Nên làm tiếp trong web:
 
-1. **Frame/template chooser**: giống Korean photobooth hơn filter hiện tại; chọn trước khi chụp hoặc trước `Make Strip`.
-2. **Crop/zoom từng slot**: giúp người dùng căn lại mặt trong từng ô strip.
-3. **QR/download bản số**: tạo QR cho contact sheet hoặc từng ảnh nếu có backend storage; nếu không có storage thì chỉ dùng download.
-4. **Pose guide**: gợi ý pose nhanh cho slot 1-4/6, tránh người dùng hết ý tưởng khi countdown.
-5. **Timer options**: 3s/5s/10s thay vì chỉ 10s.
-6. **Print stylesheet / browser print**: hỗ trợ in contact sheet từ trình duyệt, không thêm endpoint.
+1. **Đã làm - Frame/template chooser**: 4-shot có vertical strip, 2x2 grid, classic Korean; 6-shot có 3x2 grid và vertical strip.
+2. **Đã làm - Crop/zoom từng slot**: review thumbnail mở ảnh hiện tại, kéo để reposition và dùng slider zoom; contact sheet dùng crop này.
+3. **Đã làm - Pose guide**: gợi ý pose nhanh theo slot 1-4/6.
+4. **Đã làm - Timer options**: Off/3s/5s/10s theo từng lần chụp.
+5. **Đã làm - Print stylesheet / browser print**: hỗ trợ in contact sheet từ trình duyệt, không thêm endpoint.
+6. **Chưa làm - QR/download bản số qua link thật**: chỉ nên thêm khi có backend storage/share URL; hiện tại download PNG là đủ cho demo.
 
 Không nên làm ngay:
 
@@ -115,4 +115,3 @@ Không nên làm ngay:
 18. Tuổi Trẻ / Phụ Nữ Online - flow và dữ liệu cá nhân: https://tuoitre.vn/phunuonline/chup-anh-photobooth-vui-tien-nhung-co-an-toan-du-lieu-ca-nhan-a1580502.html
 19. Photo Booth 4U: https://photobooth4u.vn/
 20. Printaphy Photobooth Vietnam: https://gallery.printaphy.com/
-

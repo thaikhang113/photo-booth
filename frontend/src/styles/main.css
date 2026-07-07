@@ -434,6 +434,44 @@ h2 {
   justify-content: flex-end;
 }
 
+.strip-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.strip-tools label,
+.crop-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.strip-tools select,
+.strip-tools input[type="color"] {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.strip-tools select {
+  min-width: 190px;
+  padding: 0 10px;
+}
+
+.strip-tools input[type="color"] {
+  width: 58px;
+  padding: 4px;
+}
+
 .shot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
@@ -490,6 +528,48 @@ h2 {
   font-weight: 900;
 }
 
+.crop-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) minmax(180px, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.crop-preview {
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  background: #2b130d;
+  cursor: grab;
+  touch-action: none;
+}
+
+.crop-preview:active {
+  cursor: grabbing;
+}
+
+.crop-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.crop-panel input[type="range"] {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.print-strip {
+  display: none;
+}
+
 .section-title {
   margin-bottom: 14px;
 }
@@ -539,6 +619,10 @@ h2 {
     flex-direction: column;
   }
 
+  .crop-panel {
+    grid-template-columns: 1fr;
+  }
+
   .result-frame {
     aspect-ratio: 4 / 3;
   }
@@ -576,3 +660,29 @@ h2 {
 .opt-btn{min-height:34px;padding:0 12px;font-size:13px;font-weight:800;border:1px solid var(--border);border-radius:6px;color:var(--ink);background:var(--surface-strong);cursor:pointer}
 .opt-btn.active{color:#fffdf6;background:var(--primary);border-color:transparent}
 .opt-btn:hover{box-shadow:0 4px 12px rgba(141,23,32,0.15)}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-strip,
+  .print-strip * {
+    visibility: visible;
+  }
+
+  .print-strip {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100vh;
+    margin: auto;
+  }
+}

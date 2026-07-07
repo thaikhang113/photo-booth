@@ -1,13 +1,14 @@
 import { Camera, Check, RefreshCcw, RotateCcw, Send, Timer, Video } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { FaceLandmarker, FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
-import { boothShotTargets } from '../boothUtils.mjs';
+import { boothShotTargets, timerOptions } from '../boothUtils.mjs';
 
 const VISION_WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
 const FACE_MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const GESTURE_MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task';
+const POSE_GUIDES = ['Nhìn thẳng', 'Nghiêng nhẹ', 'Tay chữ V', 'Cười lớn', 'Tạo dáng tự do', 'Kết thúc tự nhiên'];
 
 export default function CameraBooth({
   capturedUrl,
@@ -46,6 +47,7 @@ export default function CameraBooth({
   const [livePreview, setLivePreview] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(10);
   const [faceLandmarks, setFaceLandmarks] = useState([]);
   const [handGesture, setHandGesture] = useState('None');
   const [visionReady, setVisionReady] = useState(false);
@@ -227,11 +229,11 @@ export default function CameraBooth({
   }
 
   async function captureWithTimer() {
-    if (!canCapture || timerRunning) return;
+    if (!canCapture || timerRunning || timerSeconds <= 0) return;
     timerRef.current.cancelled = false;
     setTimerRunning(true);
     setError('');
-    for (let t = 10; t > 0; t -= 1) {
+    for (let t = timerSeconds; t > 0; t -= 1) {
       if (timerRef.current.cancelled) {
         setCountdown(null);
         setTimerRunning(false);
@@ -256,6 +258,7 @@ export default function CameraBooth({
 
   const flatLandmarks = displayFaceLandmarks.flat().length;
   const faceDetected = flatLandmarks > 0;
+  const poseGuide = POSE_GUIDES[currentSlotIndex % POSE_GUIDES.length];
   const progressLabel = inMultiMode ? `Slot ${Math.min(currentSlotIndex + 1, boothMode)}/${boothMode} · ${boothShotCount}/${boothMode} OK` : '';
 
   return (
@@ -293,6 +296,14 @@ export default function CameraBooth({
           </button>
         ))}
         {inMultiMode && <span className="booth-progress">{progressLabel}</span>}
+        {inMultiMode && <span className="booth-progress">Pose: {poseGuide}</span>}
+      </div>
+      <div className="booth-controls" aria-label="Timer options">
+        {timerOptions().map((option) => (
+          <button key={option.seconds} type="button" className={timerSeconds === option.seconds ? 'opt-btn active' : 'opt-btn'} disabled={timerRunning} onClick={() => setTimerSeconds(option.seconds)}>
+            {option.label}
+          </button>
+        ))}
       </div>
       <div className="toolbar">
         <button type="button" onClick={startCamera} disabled={timerRunning}>
@@ -301,8 +312,8 @@ export default function CameraBooth({
         <button type="button" onClick={capture} disabled={!canCapture}>
           <Camera size={18} /> Capture
         </button>
-        <button type="button" onClick={captureWithTimer} disabled={!canCapture || loading}>
-          <Timer size={18} /> Timer 10s
+        <button type="button" onClick={captureWithTimer} disabled={!canCapture || loading || timerSeconds <= 0}>
+          <Timer size={18} /> {timerSeconds > 0 ? `Timer ${timerSeconds}s` : 'Timer Off'}
         </button>
         {inMultiMode && (
           <button type="button" onClick={startSession} disabled={!cameraOn || timerRunning || loading || boothActive}>

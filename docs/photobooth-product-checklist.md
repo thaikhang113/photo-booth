@@ -11,15 +11,15 @@
 - [x] Review thumbnails.
 - [x] Apply all only after all slots are accepted.
 - [x] Contact sheet / strip download.
+- [x] Frame/template chooser before final strip.
+- [x] Crop/zoom/reposition each slot before final strip.
+- [x] Pose guide per slot.
+- [x] Timer choices: Off, 3s, 5s, 10s.
+- [x] Browser print layout for final strip.
 
 ## Next Product Gaps
 
-- [ ] Frame/template chooser before or after shooting.
-- [ ] Crop/zoom/reposition each slot before final strip.
-- [ ] Pose guide per slot.
-- [ ] Timer choices: 3s, 5s, 10s.
 - [ ] QR download for contact sheet if storage/share URL exists.
-- [ ] Browser print layout for final strip.
 - [ ] Clear camera permission troubleshooting.
 - [ ] Data privacy note if any photo is uploaded/stored.
 
@@ -43,4 +43,3 @@
 - [ ] Repeat quick smoke for `6 shots`.
 - [ ] Apply at least one cultural filter to one shot and `Apply All` to full strip.
 - [ ] Check browser console for runtime/fetch errors.
-

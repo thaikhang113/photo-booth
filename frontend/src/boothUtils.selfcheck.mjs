@@ -3,9 +3,13 @@ import {
   acceptSlot,
   allSlotsReady,
   boothShotTargets,
+  boothTemplates,
   contactSheetLayout,
   createBoothSlots,
+  defaultCrop,
+  normalizeCrop,
   retakeSlot,
+  timerOptions,
 } from "./boothUtils.mjs";
 
 assert.deepEqual(boothShotTargets(), [1, 4, 6], "booth should support single, 4, and 6 shots");
@@ -36,5 +40,11 @@ const ready = [0, 1, 2, 3].reduce(
 assert.equal(allSlotsReady(ready), true);
 assert.deepEqual(contactSheetLayout(4), { cols: 2, rows: 2 });
 assert.deepEqual(contactSheetLayout(6), { cols: 3, rows: 2 });
+assert.deepEqual(timerOptions().map((option) => option.seconds), [0, 3, 5, 10]);
+assert.deepEqual(boothTemplates(4).map((template) => template.id), ["vertical", "grid-2x2", "classic"]);
+assert.deepEqual(boothTemplates(6).map((template) => template.id), ["grid-3x2", "vertical"]);
+assert.deepEqual(defaultCrop(), { zoom: 1, x: 0, y: 0 });
+assert.deepEqual(normalizeCrop({ zoom: 0.2, x: 99, y: -99 }), { zoom: 1, x: 50, y: -50 });
+assert.deepEqual(normalizeCrop({ zoom: 3.4, x: -99, y: 99 }), { zoom: 3, x: -50, y: 50 });
 
 console.log("booth utils self-check ok");

@@ -3,7 +3,7 @@ import CameraBooth from "./components/CameraBooth.jsx";
 import FilterPanel from "./components/FilterPanel.jsx";
 import Header from "./components/Header.jsx";
 import ResultPreview from "./components/ResultPreview.jsx";
-import { acceptSlot, allSlotsReady, contactSheetLayout, createBoothSlots, retakeSlot } from "./boothUtils.mjs";
+import { acceptSlot, allSlotsReady, boothTemplates, contactSheetLayout, createBoothSlots, defaultCrop, normalizeCrop, retakeSlot } from "./boothUtils.mjs";
 import { fetchFilters, processImage } from "./services/api.js";
 
 const FILTER_DEFAULTS = [
@@ -41,6 +41,9 @@ export default function App() {
   const [boothActive,setBoothActive]=useState(false);
   const [reviewMode,setReviewMode]=useState(false);
   const [contactSheetUrl,setContactSheetUrl]=useState("");
+  const [selectedTemplate,setSelectedTemplate]=useState("grid-2x2");
+  const [frameColor,setFrameColor]=useState("#8b1f23");
+  const [dragCrop,setDragCrop]=useState(null);
   const livePreviewSeq = useRef(0);
 
   useEffect(()=>{fetchFilters().then(d=>setFilters(withFallbackMeta(d.filters))).catch(()=>{setFilters(FILTER_DEFAULTS);setError("Backend chưa sẵn sàng. Vẫn có thể chụp ảnh, nhưng Apply Filter cần FastAPI.");});},[]);
@@ -69,6 +72,7 @@ export default function App() {
         faceLandmarks: info.faceLandmarks ?? faceLandmarks,
         handGesture: info.handGesture ?? handGesture,
       },
+      crop: defaultCrop(),
       status: "pending_ok",
     };
     setCapturedUrl(url);
@@ -148,6 +152,7 @@ export default function App() {
     revokeShotUrls(boothShots);
     clearPendingShot();
     setBoothMode(target);
+    setSelectedTemplate(target===6?"grid-3x2":"grid-2x2");
     setBoothShots([]);
     setSelectedShotIndex(0);
     setCurrentSlotIndex(0);
@@ -159,10 +164,35 @@ export default function App() {
     setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
   }
 
+  function updateShotCrop(index, patch){
+    setBoothShots((prev)=>prev.map((shot,i)=>i===index?{...shot,crop:normalizeCrop({...shot.crop,...patch})}:shot));
+    setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});
+  }
+
+  function startCropDrag(event){
+    if(!boothShots[selectedShotIndex]?.url)return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const crop=boothShots[selectedShotIndex].crop||defaultCrop();
+    setDragCrop({pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,crop});
+  }
+
+  function moveCropDrag(event){
+    if(!dragCrop||dragCrop.pointerId!==event.pointerId)return;
+    updateShotCrop(selectedShotIndex,{
+      x:dragCrop.crop.x+(event.clientX-dragCrop.startX)/4,
+      y:dragCrop.crop.y+(event.clientY-dragCrop.startY)/4,
+    });
+  }
+
+  function endCropDrag(){
+    setDragCrop(null);
+  }
+
   function startBoothSession(){
     revokeShotUrls(boothShots);
     clearPendingShot();
     setBoothShots(createBoothSlots(boothMode));
+    setSelectedTemplate(boothMode===6?"grid-3x2":"grid-2x2");
     setSelectedShotIndex(0);
     setCurrentSlotIndex(0);
     setBoothActive(true);
@@ -239,17 +269,33 @@ export default function App() {
     });
   }
 
+  function drawCroppedImage(ctx,img,x,y,w,h,crop=defaultCrop()){
+    const c=normalizeCrop(crop);
+    const scale=Math.max(w/img.width,h/img.height)*c.zoom;
+    const dw=img.width*scale, dh=img.height*scale;
+    const dx=x+(w-dw)/2+(c.x/100)*(w/2);
+    const dy=y+(h-dh)/2+(c.y/100)*(h/2);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x,y,w,h);
+    ctx.clip();
+    ctx.drawImage(img,dx,dy,dw,dh);
+    ctx.restore();
+  }
+
   const buildContactSheet=useCallback(async(shots=boothShots)=>{
     if(!allSlotsReady(shots))return "";
-    const {cols,rows}=contactSheetLayout(shots.length);
-    const cellW=420, cellH=315, gap=22, pad=34;
+    const {cols,rows}=contactSheetLayout(shots.length,selectedTemplate);
+    const cellW=selectedTemplate==="vertical"||selectedTemplate==="classic"?360:420;
+    const cellH=selectedTemplate==="vertical"||selectedTemplate==="classic"?270:315;
+    const gap=selectedTemplate==="classic"?16:22, pad=34;
     const canvas=document.createElement("canvas");
     canvas.width=cols*cellW+(cols-1)*gap+pad*2;
     canvas.height=rows*cellH+(rows-1)*gap+pad*2+72;
     const ctx=canvas.getContext("2d");
-    ctx.fillStyle="#fffaf1";
+    ctx.fillStyle=selectedTemplate==="classic"?"#fffdf7":"#fffaf1";
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle="#8b1f23";
+    ctx.fillStyle=frameColor;
     ctx.font="700 34px Arial";
     ctx.fillText("Photo Booth Văn Hóa Việt Nam",pad,48);
     const images=await Promise.all(shots.map((shot)=>loadImage(shot.resultUrl||shot.url)));
@@ -258,11 +304,9 @@ export default function App() {
       const x=pad+col*(cellW+gap), y=pad+72+row*(cellH+gap);
       ctx.fillStyle="#ffffff";
       ctx.fillRect(x,y,cellW,cellH);
-      const scale=Math.max(cellW/img.width,cellH/img.height);
-      const dw=img.width*scale, dh=img.height*scale;
-      ctx.drawImage(img,x+(cellW-dw)/2,y+(cellH-dh)/2,dw,dh);
-      ctx.strokeStyle="#d9b870";
-      ctx.lineWidth=6;
+      drawCroppedImage(ctx,img,x,y,cellW,cellH,shots[i].crop);
+      ctx.strokeStyle=frameColor;
+      ctx.lineWidth=selectedTemplate==="classic"?10:6;
       ctx.strokeRect(x+3,y+3,cellW-6,cellH-6);
     });
     const blob=await new Promise((resolve)=>canvas.toBlob(resolve,"image/png"));
@@ -270,7 +314,13 @@ export default function App() {
     const url=URL.createObjectURL(blob);
     setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return url;});
     return url;
-  },[boothShots]);
+  },[boothShots, frameColor, selectedTemplate]);
+
+  const printStrip=useCallback(async()=>{
+    const url=contactSheetUrl||await buildContactSheet();
+    if(!url)return;
+    requestAnimationFrame(()=>window.print());
+  },[buildContactSheet, contactSheetUrl]);
 
   const applyAllShots=useCallback(async()=>{
     if(!allSlotsReady(boothShots))return;
@@ -306,6 +356,9 @@ export default function App() {
 
   const slotsReady=allSlotsReady(boothShots);
   const acceptedCount=boothShots.filter((shot)=>shot.status==="accepted"||shot.status==="processed").length;
+  const templateOptions=boothTemplates(boothShots.length||boothMode);
+  const selectedShot=boothShots[selectedShotIndex];
+  const selectedCrop=selectedShot?.crop||defaultCrop();
 
   return (<main className="app-shell">
     <Header/>
@@ -332,8 +385,19 @@ export default function App() {
         <div className="shot-actions">
           <button type="button" onClick={applyAllShots} disabled={loading||!slotsReady}>Apply All</button>
           <button type="button" className="ghost" onClick={()=>buildContactSheet()} disabled={loading||!slotsReady}>Make Strip</button>
+          <button type="button" className="ghost" onClick={printStrip} disabled={loading||!slotsReady}>Print Strip</button>
           <a className={!contactSheetUrl?"download disabled":"download"} href={contactSheetUrl||"#"} download="photo-booth-strip.png">Download Strip</a>
         </div>
+      </div>
+      <div className="strip-tools">
+        <label>Frame
+          <select value={selectedTemplate} onChange={(event)=>{setSelectedTemplate(event.target.value);setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});}}>
+            {templateOptions.map((template)=><option key={template.id} value={template.id}>{template.label}</option>)}
+          </select>
+        </label>
+        <label>Color
+          <input type="color" value={frameColor} onChange={(event)=>{setFrameColor(event.target.value);setContactSheetUrl((prev)=>{if(prev)URL.revokeObjectURL(prev);return "";});}} />
+        </label>
       </div>
       <div className="shot-grid">
         {boothShots.map((shot,i)=><button type="button" key={shot.id} className={`${selectedShotIndex===i?"shot-thumb active":"shot-thumb"} ${shot.status==="empty"?"empty":""}`} onClick={()=>selectShot(i)}>
@@ -341,6 +405,15 @@ export default function App() {
           <span>{i+1}</span>
         </button>)}
       </div>
+      {selectedShot?.url&&<div className="crop-panel">
+        <div className="crop-preview" onPointerDown={startCropDrag} onPointerMove={moveCropDrag} onPointerUp={endCropDrag} onPointerCancel={endCropDrag}>
+          <img src={selectedShot.resultUrl||selectedShot.url} alt={`Crop slot ${selectedShotIndex+1}`} style={{transform:`translate(${selectedCrop.x}%, ${selectedCrop.y}%) scale(${selectedCrop.zoom})`}} draggable="false" />
+        </div>
+        <label>Zoom
+          <input type="range" min="1" max="3" step="0.05" value={selectedCrop.zoom} onChange={(event)=>updateShotCrop(selectedShotIndex,{zoom:Number(event.target.value)})} />
+        </label>
+      </div>}
+      {contactSheetUrl&&<img className="print-strip" src={contactSheetUrl} alt="Printable photo strip" />}
     </section>}
     <ResultPreview resultUrl={resultUrl} loading={loading}/>
   </main>);
