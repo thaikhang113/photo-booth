@@ -14,9 +14,9 @@ def _nearest_palette(image: np.ndarray, palette: np.ndarray) -> np.ndarray:
 def _paper_background(h: int, w: int) -> np.ndarray:
     yy, xx = np.indices((h, w))
     paper_variants = np.array([
-        (204, 216, 229), (208, 220, 233), (212, 223, 235),
-        (216, 226, 238), (220, 229, 240), (224, 232, 242),
-        (210, 217, 226), (218, 224, 232), (226, 233, 241),
+        (186, 206, 226), (194, 213, 232), (202, 220, 238),
+        (210, 226, 242), (218, 232, 246), (226, 238, 248),
+        (190, 204, 219), (204, 216, 229), (218, 226, 236),
     ], dtype=np.uint8)
     variant_index = ((xx // 5 + yy // 7 + (xx * 3 + yy * 5) % 9) % len(paper_variants)).astype(np.uint8)
     paper = paper_variants[variant_index].copy()
@@ -36,24 +36,51 @@ def _clean_edges(edges: np.ndarray, min_area: int) -> np.ndarray:
 
 def _draw_folk_motifs(result: np.ndarray, border: int) -> None:
     h, w = result.shape[:2]
-    red = (62, 72, 164)
-    green = (74, 116, 58)
+    red = (44, 48, 142)
+    green = (58, 104, 48)
+    ochre = (42, 132, 186)
+    black = (28, 24, 21)
     line = max(1, border // 5)
-    for sx in (1, -1):
-        cx = border * 5 if sx == 1 else w - border * 5
-        cy = border * 5
-        cv2.ellipse(result, (cx, cy), (border * 3, border), 0, 0, 180, red, line, cv2.LINE_8)
-        cv2.ellipse(result, (cx + sx * border * 3, cy + border), (border * 2, border), 0, 0, 180, red, line, cv2.LINE_8)
-    flower_y = max(border * 7, h - border * 9)
-    for sx in (1, -1):
-        cx = border * 5 if sx == 1 else w - border * 5
-        cv2.circle(result, (cx, flower_y), max(2, border // 2), red, -1, cv2.LINE_8)
-        for angle in (0, 60, 120, 180, 240, 300):
+    lotus_x = max(border * 6, int(w * 0.18))
+    lotus_y = max(border * 9, h - border * 8)
+    for offset, scale in ((0, 3), (-border * 3, 2), (border * 3, 2)):
+        cx = lotus_x + offset
+        cv2.circle(result, (cx, lotus_y), max(2, border // 2), ochre, -1, cv2.LINE_8)
+        for angle in (35, 75, 115, 155, 215, 255, 295, 335):
             rad = np.deg2rad(angle)
-            px = int(cx + np.cos(rad) * border * 2)
-            py = int(flower_y + np.sin(rad) * border * 2)
-            cv2.ellipse(result, (px, py), (max(2, border), max(2, border // 2)), angle, 0, 360, red, line, cv2.LINE_8)
-        cv2.line(result, (cx, flower_y + border * 2), (cx, flower_y + border * 5), green, line, cv2.LINE_8)
+            px = int(cx + np.cos(rad) * border * scale)
+            py = int(lotus_y + np.sin(rad) * border * scale * 0.75)
+            cv2.ellipse(result, (px, py), (max(3, border), max(2, border // 2)), angle, 0, 360, red, -1, cv2.LINE_8)
+            cv2.ellipse(result, (px, py), (max(3, border), max(2, border // 2)), angle, 0, 360, black, line, cv2.LINE_8)
+        cv2.line(result, (cx, lotus_y + border * 2), (cx - border, h - border * 3), green, line + 1, cv2.LINE_8)
+    for i in range(4):
+        cv2.ellipse(result, (lotus_x - border * 5 + i * border * 3, h - border * 3), (border * 3, border), -18, 0, 360, green, -1, cv2.LINE_8)
+        cv2.ellipse(result, (lotus_x - border * 5 + i * border * 3, h - border * 3), (border * 3, border), -18, 0, 360, black, line, cv2.LINE_8)
+
+    if w >= 260 and h >= 190:
+        panel_w = max(border * 6, int(w * 0.16))
+        panel_h = max(border * 13, int(h * 0.36))
+        x2 = w - border * 3
+        x1 = x2 - panel_w
+        y1 = border * 4
+        y2 = min(h - border * 7, y1 + panel_h)
+        cv2.rectangle(result, (x1, y1), (x2, y2), (202, 220, 238), -1)
+        cv2.rectangle(result, (x1, y1), (x2, y2), black, max(1, border // 4))
+        cv2.rectangle(result, (x1 + line * 2, y1 + line * 2), (x2 - line * 2, y2 - line * 2), red, line)
+        for idx, char in enumerate("PHUC"):
+            cy = y1 + border * 3 + idx * max(border * 2, (y2 - y1 - border * 5) // 4)
+            cv2.putText(result, char, (x1 + panel_w // 3, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.45, black, max(1, line + 1), cv2.LINE_8)
+
+    if w >= 280 and h >= 220:
+        cx = w - border * 7
+        cy = h - border * 8
+        cv2.ellipse(result, (cx, cy), (border * 3, border * 4), -10, 0, 360, (54, 90, 126), -1, cv2.LINE_8)
+        cv2.ellipse(result, (cx, cy), (border * 3, border * 4), -10, 0, 360, black, line, cv2.LINE_8)
+        cv2.circle(result, (cx - border * 2, cy - border * 4), border * 2, ochre, -1, cv2.LINE_8)
+        cv2.circle(result, (cx - border * 2, cy - border * 4), border * 2, black, line, cv2.LINE_8)
+        cv2.circle(result, (cx - border * 2, cy - border * 4), max(1, border // 3), black, -1, cv2.LINE_8)
+        for i, angle in enumerate((-60, -35, -10, 15)):
+            cv2.ellipse(result, (cx + border * 3, cy - border + i * border), (border * 4, border), angle, 0, 300, red if i % 2 else green, max(1, line + 1), cv2.LINE_8)
 
 
 def apply_dong_ho(image: np.ndarray, metadata: dict | None = None) -> np.ndarray:

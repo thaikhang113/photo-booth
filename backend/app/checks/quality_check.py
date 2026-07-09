@@ -43,7 +43,14 @@ def main():
     palette_size = len(np.unique(dong_ho.reshape(-1, 3), axis=0))
     border = np.concatenate([dong_ho[:8].reshape(-1, 3), dong_ho[-8:].reshape(-1, 3), dong_ho[:, :8].reshape(-1, 3), dong_ho[:, -8:].reshape(-1, 3)])
     dark_ratio = float(np.mean(np.all(dong_ho < 55, axis=2)))
-    paper_ratio = float(np.mean((dong_ho[:, :, 0] > 190) & (dong_ho[:, :, 1] > 195) & (dong_ho[:, :, 2] > 205)))
+    warm_paper = (
+        (dong_ho[:, :, 0] > 160) & (dong_ho[:, :, 0] < 235)
+        & (dong_ho[:, :, 1] > 185) & (dong_ho[:, :, 1] < 245)
+        & (dong_ho[:, :, 2] > 205)
+        & (dong_ho[:, :, 2] >= dong_ho[:, :, 1])
+        & (dong_ho[:, :, 1] >= dong_ho[:, :, 0])
+    )
+    paper_ratio = float(np.mean(warm_paper))
     mask = subject_mask(image, metadata) > 0.55
     background = ~mask
     background[:12, :] = False
@@ -52,7 +59,7 @@ def main():
     background[:, -12:] = False
     background_dark_ratio = float(np.mean(np.all(dong_ho[background] < 55, axis=1)))
     subject_dark_ratio = float(np.mean(np.all(dong_ho[mask] < 55, axis=1)))
-    background_paper_ratio = float(np.mean((dong_ho[background, 0] > 190) & (dong_ho[background, 1] > 195) & (dong_ho[background, 2] > 205)))
+    background_paper_ratio = float(np.mean(warm_paper[background]))
     cool_gray_ratio = float(np.mean(
         (np.abs(dong_ho[:, :, 0].astype(np.int16) - dong_ho[:, :, 1].astype(np.int16)) < 18)
         & (np.abs(dong_ho[:, :, 1].astype(np.int16) - dong_ho[:, :, 2].astype(np.int16)) < 18)
@@ -62,6 +69,13 @@ def main():
     red_ink = (dong_ho[:, :, 2] > 100) & (dong_ho[:, :, 1] < 90) & (dong_ho[:, :, 0] < 90)
     lower_caption_ratio = float(np.mean(red_ink[-45:-12, 36:-36]))
     upper_subject_ratio = float(np.mean(red_ink[30:110, 72:-72]))
+    right_panel = dong_ho[28:118, -74:-22]
+    right_panel_ink = float(np.mean(np.all(right_panel < 60, axis=2) | ((right_panel[:, :, 2] > 100) & (right_panel[:, :, 1] < 90) & (right_panel[:, :, 0] < 90))))
+    folk_corner = dong_ho[-92:-18, 16:108]
+    folk_corner_color = float(np.mean(
+        ((folk_corner[:, :, 2] > 90) & (folk_corner[:, :, 1] < 130) & (folk_corner[:, :, 0] < 130))
+        | ((folk_corner[:, :, 1] > 70) & (folk_corner[:, :, 0] < 120) & (folk_corner[:, :, 2] < 140))
+    ))
     assert 12 <= palette_size < 120, "dong ho should use restrained colors plus subtle diep-paper texture"
     assert float(border.mean()) < float(dong_ho.mean()) - 20, "dong ho should add a dark folk-art border"
     assert dark_ratio > 0.05, "dong ho should have visible black woodcut lines"
@@ -71,6 +85,8 @@ def main():
     assert cool_gray_ratio < 0.12, "dong ho should not be dominated by cool classroom grays"
     assert lower_caption_ratio > 0.01, "dong ho caption/red ink should sit in the lower folk border"
     assert upper_subject_ratio < 0.005, "dong ho caption should not cover the face/top subject area"
+    assert right_panel_ink > 0.05, "dong ho should add a vertical blessing panel like folk portraits"
+    assert folk_corner_color > 0.08, "dong ho should add lotus/folk motif color in the lower corner"
 
     landmark = apply_landmark(image, {"faceLandmarks": FACE_LANDMARKS, "filterOptions": {"landmark": "ha_long"}})
     assert _changed_ratio(image[:60], landmark[:60]) > 0.35, "landmark should replace background"
