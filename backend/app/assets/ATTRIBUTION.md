@@ -1,9 +1,13 @@
 # Image Attribution
 
-Background assets are resized local copies from Wikimedia Commons via `Special:FilePath`.
+Landmark background assets are resized local copies from Wikimedia Commons via `Special:FilePath`.
 
 - `backgrounds/hoi_an.jpg`: `Lanterns in Hoi An 6.jpg`, Wikimedia Commons.
 - `backgrounds/hue.jpg`: `Imperial City Hue 20190917-2.jpg`, Wikimedia Commons.
 - `backgrounds/ho_guom.jpg`: `Turtle Tower, Hoan Kiem Lake, Hanoi 4G4A7301.jpg`, Wikimedia Commons.
 - `backgrounds/ha_long.jpg`: `Halong ensemble (colour corrected).jpg`, Wikimedia Commons.
-- `tet/flower_market.jpg`: `Cho hoa tet 2.jpg`, Wikimedia Commons.
+Tet background assets added on 2026-07-09 are user-provided reference assets.
+
+- `tet/home.jpg`: User-provided reference asset.
+- `tet/street.jpg`: User-provided reference asset.
+- `tet/flower_market.jpg`: User-provided reference asset.

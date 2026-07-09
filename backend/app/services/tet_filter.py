@@ -14,19 +14,12 @@ def apply_tet(image: np.ndarray, metadata: dict | None = None) -> np.ndarray:
         location = (metadata.get("filterOptions") or {}).get("tetLocation") or location
     result = _compose_location(image, metadata, location)
     h, w = result.shape[:2]
-    border = int(min(w, h) * 0.035)
+    border = max(4, int(min(w, h) * 0.014))
 
     cv2.rectangle(result, (0, 0), (w - 1, h - 1), (22, 26, 185), border)
-    cv2.rectangle(result, (border, border), (w - border, h - border), (0, 215, 255), 2)
-
-    for i in range(6):
-        x = int((i + 0.5) * w / 6)
-        if i % 2 == 0:
-            _lantern(result, x, border + 36)
-        else:
-            _flower(result, x, border + 30, 14, (0, 225, 255))
-
-    result = put_vietnamese_text(result, "Chuc Mung Nam Moi", (border + 14, h - border - 50), 25, (255, 235, 70))
+    cv2.rectangle(result, (border, border), (w - border, h - border), (0, 215, 255), 1)
+    if h >= 360 and w >= 480:
+        result = put_vietnamese_text(result, "Chuc Mung Nam Moi", (border + 12, h - border - 30), 18, (255, 235, 70))
     return result
 
 
